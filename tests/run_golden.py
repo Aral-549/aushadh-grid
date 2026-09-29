@@ -57,8 +57,9 @@ def main():
         for w in (360, 390):
             open(os.path.join(work, f"frame{w}.html"), "w", encoding="utf-8").write(FRAME % w)
 
-        handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=work)
-        handler.log_message = lambda *a: None
+        class Quiet(http.server.SimpleHTTPRequestHandler):
+            def log_message(self, *a): pass
+        handler = functools.partial(Quiet, directory=work)
         srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         port = srv.server_address[1]

@@ -689,7 +689,10 @@ function cleanSeries(y) {
   }
   return { x, censored, outliers };
 }
-function baseForecast(raw) {
+// Smoothing parameters, chosen by tools/tune_forecast.py on days 92-105 only (contracts/forecast.md).
+// The 14-day holdout shown in the app (days 106-119) was not used to choose them.
+let ALPHA = 0.05, BETA = 0; // selection WAPE 18.79% (grid best; 28-day average 21.26%)
+function baseForecast(raw, alpha = ALPHA, beta = BETA) {
   const cl = cleanSeries(raw), y = cl.x;
   const n = y.length, win = 56;
   const f = [0, 0, 0, 0, 0, 0, 0], c = [0, 0, 0, 0, 0, 0, 0];
@@ -697,7 +700,6 @@ function baseForecast(raw) {
   for (let t = n - win; t < n; t++) { f[t % 7] += y[t]; c[t % 7]++; tot += y[t]; }
   const mu = tot / win || 1e-6;
   const s = f.map((v, i) => (v / c[i]) / mu || 1);
-  const alpha = 0.3, beta = 0.08;
   let L = y[0] / s[0], T = 0, sse = 0, cnt = 0;
   for (let t = 1; t < n; t++) {
     const xv = y[t] / s[t % 7];
@@ -1678,7 +1680,7 @@ setScenario("normal", null, "manual");
 const start = (location.hash || "").slice(1);
 show(VIEWS.includes(start) ? start : "overview");
 // read-only hook for tests/golden (planning stages are otherwise private to this closure)
-window.__AG_TEST = Object.freeze({ lineOut, smsFor, route, carrier, directKm, backtest, DIST_BY_ID, PHC_BY_ID, MED_BY_ID,
+window.__AG_TEST = Object.freeze({ baseForecast, cleanSeries, PHCS, MEDS, HIST, get ALPHA() { return ALPHA; }, get BETA() { return BETA; }, lineOut, smsFor, route, carrier, directKm, backtest, DIST_BY_ID, PHC_BY_ID, MED_BY_ID,
   get IMPACT() { return IMPACT; }, get RUNS() { return RUNS; }, get ORDERS() { return ORDERS; }, get TRANSFERS() { return TRANSFERS; }, get INDENTS() { return INDENTS; }, get EVALS() { return EVALS; } });
 let tourDone = false;
 try { tourDone = localStorage.getItem("ag-tour-done") === "1"; } catch (e) {}
