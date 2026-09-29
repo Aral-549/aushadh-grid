@@ -214,6 +214,24 @@ textarea { width: 100%; min-height: 96px; font-family: var(--font-data); font-si
 .file-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.8rem; }
 .sub { color: var(--muted); font-size: 0.75rem; }
 
+/* ---------- plan impact ---------- */
+.impact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.imp { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 2px; background: var(--sunken); }
+.imp .k { font-family: var(--font-data); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.imp .v { font-family: var(--font-display); font-size: 2rem; font-weight: 800; line-height: 1.05; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.imp .v s { color: var(--crit); text-decoration-thickness: 2px; opacity: 0.8; }
+.imp .v b { color: var(--ok); }
+.imp .v i { font-style: normal; color: var(--muted); font-size: 1.2rem; }
+.imp .s { font-size: 0.76rem; color: var(--muted); }
+/* ---------- dispatch ---------- */
+td.route, td.sms { white-space: normal; }
+td.route { min-width: 260px; line-height: 1.7; }
+.stop { font-family: var(--font-data); font-size: 0.74rem; padding: 1px 6px; border-radius: 4px; background: var(--sunken); white-space: nowrap; }
+.stop.up { color: var(--surplus); } .stop.down { color: var(--ok); }
+.arrow { color: var(--muted); margin: 0 3px; }
+td.sms { font-family: var(--font-data); font-size: 0.74rem; min-width: 300px; max-width: 520px; }
+td.sms div + div { margin-top: 4px; }
+
 /* ---------- guided tour ---------- */
 .tour { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; width: min(380px, calc(100vw - 32px)); background: var(--band); border: 1px solid var(--band-line); border-radius: var(--r); box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.65); overflow: hidden; }
 .tour-bar { height: 3px; background: var(--band-line); }
@@ -262,6 +280,7 @@ textarea { width: 100%; min-height: 96px; font-family: var(--font-data); font-si
     <button class="tab" role="tab" data-view="stock" aria-selected="false">Stock &amp; forecast</button>
     <button class="tab" role="tab" data-view="expiry" aria-selected="false">Expiry &amp; wastage</button>
     <button class="tab" role="tab" data-view="redistribute" aria-selected="false">Transfers &amp; indents</button>
+    <button class="tab" role="tab" data-view="dispatch" aria-selected="false">Dispatch</button>
     <button class="tab" role="tab" data-view="capacity" aria-selected="false">Beds, staff &amp; referral</button>
     <button class="tab" role="tab" data-view="quality" aria-selected="false">Data quality</button>
     <button class="tab" role="tab" data-view="federated" aria-selected="false">BRICS federated model</button>
@@ -290,6 +309,12 @@ textarea { width: 100%; min-height: 96px; font-family: var(--font-data); font-si
   <section class="view" id="v-overview">
     <div class="scenario-note" id="scenario-note" hidden></div>
     <div class="tiles" id="tiles"></div>
+    <div class="panel">
+      <div class="panel-h"><h2>What the plan changes</h2><p>Days without stock before routine resupply arrives, if nothing is done vs if the transfers go out today</p></div>
+      <div class="impact-grid" id="impact"></div>
+      <div class="chart-box"><canvas id="c-impact"></canvas></div>
+      <p class="hint">Each medicine line is simulated day by day over its own resupply window (7 to 14 days) against its forecast. A transfer arrives the day after dispatch at the earliest; the donor gives up the stock today. Demand that cannot be met on a day is counted as lost, because patients go without rather than wait. Warehouse indents arrive with routine resupply, so they are not counted here.</p>
+    </div>
     <div class="grid2">
       <div class="panel">
         <div class="panel-h"><h2>Early warnings</h2><p>Vital medicines first, then by stock-out probability</p></div>
@@ -335,6 +360,10 @@ PHC-029 STOCK ORS 2640</textarea>
 
   <!-- STOCK -->
   <section class="view" id="v-stock" hidden>
+    <div class="panel">
+      <div class="panel-h"><h2>How accurate is the forecast?</h2><p>The last 14 days of history are hidden, forecast from the 106 days before, then compared with what was actually used</p></div>
+      <div class="impact-grid" id="bt-tiles"></div>
+    </div>
     <div class="panel">
       <div class="panel-h">
         <h2>Medicine stock and demand forecast</h2>
@@ -382,6 +411,21 @@ PHC-029 STOCK ORS 2640</textarea>
     <div class="panel">
       <div class="panel-h"><h2>State warehouse indents</h2><p>Need no nearby PHC can cover, Vital first (WHO VEN priority)</p></div>
       <div class="tbl-wrap"><table><thead><tr><th>Priority</th><th>Medicine</th><th>PHC</th><th>District</th><th class="n">Qty to indent</th><th class="n">Cost</th><th>Note</th></tr></thead><tbody id="indent-body"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- DISPATCH -->
+  <section class="view" id="v-dispatch" hidden>
+    <div class="tiles" id="dp-tiles"></div>
+    <div class="panel">
+      <div class="panel-h"><h2>Vehicle runs</h2><div class="row"><button class="btn" id="copy-runs" type="button">Copy run sheets</button></div></div>
+      <p class="hint">Each district vehicle leaves its headquarters, collects from donor PHCs, delivers to receivers and returns. A transfer joins a run only if that costs no more road km than a separate trip, and a run stays within an 8-hour day (35 km/h plus 15 minutes a stop). Runs carrying vaccines, insulin or oxytocin need a cold box.</p>
+      <div class="tbl-wrap"><table><thead><tr><th>Run</th><th>Route (collect ↑, deliver ↓)</th><th class="n">Items</th><th class="n">Road km</th><th class="n">Hours</th><th>Carry</th><th>Status</th></tr></thead><tbody id="run-body"></tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h2>Work orders for PHC pharmacists</h2><div class="row"><button class="btn primary" id="copy-sms" type="button">Copy all SMS</button></div></div>
+      <p class="hint">One SMS per PHC, in the same medicine codes pharmacists already use to report stock, so it works on any phone. PHCs whose last report is 3 or more days old are asked to count their stock before anything moves, so nobody drives stock around on stale numbers.</p>
+      <div class="tbl-wrap"><table><thead><tr><th>PHC</th><th>Send</th><th>Receive</th><th>Indent</th><th>SMS</th></tr></thead><tbody id="order-body"></tbody></table></div>
     </div>
   </section>
 
@@ -794,6 +838,172 @@ function planTransfers() {
 }
 function coverWith(e, stock) { let cum = 0; for (let k = 0; k < EXT; k++) { cum += e.f[k]; if (cum > stock) return k + (stock - (cum - e.f[k])) / e.f[k]; } return EXT; }
 
+// ================= stage log =================
+// structured record at each planning stage boundary: plan -> impact -> runs -> orders
+const AG_LOG = window.__AG_LOG = [];
+function logStage(stage, input, output) {
+  const rec = { t: new Date().toISOString(), stage, input, output };
+  AG_LOG.push(rec); if (AG_LOG.length > 200) AG_LOG.shift();
+  try { console.debug("[aushadh]", rec); } catch (e) {}
+}
+
+// ================= plan impact =================
+// Days without stock over the resupply window (days 0 .. lead-1). Unmet demand is lost, not carried over.
+function lineOut(e, inflow, outflow) {
+  let s = Math.max(0, e.stock - outflow), days = 0, unmet = 0;
+  for (let k = 0; k < e.m.lead; k++) {
+    for (const x of inflow) if (x.day === k) s += x.qty;
+    const d = e.f[k];
+    if (!(d > 0)) continue;
+    const served = Math.min(s, d); s -= served;
+    if (d - served > 1e-9) { days += (d - served) / d; unmet += d - served; }
+  }
+  return { days, unmet };
+}
+let IMPACT = null;
+function simulateImpact() {
+  const flows = new Map(), key = e => e.p.id + e.m.id;
+  const at = k => flows.get(k) || flows.set(k, { in: [], out: 0 }).get(k);
+  TRANSFERS.forEach(t => { at(key(t.recv)).in.push({ day: Math.ceil(t.eta / 24), qty: t.qty }); at(key(t.donor)).out += t.qty; });
+  const blank = () => ({ outDays: 0, vitalOutDays: 0, unmetUnits: 0, linesOut: 0 });
+  const add = (a, r, e) => { a.outDays += r.days; if (e.m.ven === "V") a.vitalOutDays += r.days; a.unmetUnits += r.unmet; if (r.days > 0) a.linesOut++; };
+  const res = { none: blank(), plan: blank(), byDistrict: {}, lines: new Map() };
+  DISTRICTS.forEach(d => { res.byDistrict[d.id] = { none: blank(), plan: blank() }; });
+  EVALS.forEach(e => {
+    const f = flows.get(key(e)) || { in: [], out: 0 };
+    const a = lineOut(e, [], 0), b = lineOut(e, f.in, f.out);
+    add(res.none, a, e); add(res.plan, b, e);
+    add(res.byDistrict[e.p.district].none, a, e); add(res.byDistrict[e.p.district].plan, b, e);
+    res.lines.set(key(e), { none: a, plan: b });
+  });
+  return res;
+}
+// impact restricted to the district filter
+function impactIn() {
+  if (districtFilter === "all") return IMPACT;
+  return { ...IMPACT, none: IMPACT.byDistrict[districtFilter].none, plan: IMPACT.byDistrict[districtFilter].plan };
+}
+
+// ================= vehicle runs =================
+const STOP_H = 0.25, MAX_H = 8;
+// pickups first (donors), then drops (receivers), each leg to the nearest unvisited PHC; start and end at the district HQ
+function route(hq, trs) {
+  const pick = new Map(), drop = new Map();
+  trs.forEach(t => {
+    (pick.get(t.from) || pick.set(t.from, []).get(t.from)).push(t);
+    (drop.get(t.to) || drop.set(t.to, []).get(t.to)).push(t);
+  });
+  let here = hq, km = 0;
+  const stops = [];
+  const visit = (group, kind) => {
+    const left = [...group.keys()];
+    while (left.length) {
+      left.sort((a, b) => haversine(here, a) - haversine(here, b));
+      const p = left.shift();
+      km += haversine(here, p) * ROAD; here = p;
+      stops.push({ phc: p, pickups: kind === "pick" ? group.get(p) : [], drops: kind === "drop" ? group.get(p) : [] });
+    }
+  };
+  visit(pick, "pick"); visit(drop, "drop");
+  km += haversine(here, hq) * ROAD;
+  return { stops, km, hours: km / SPEED + STOP_H * stops.length };
+}
+let RUNS = [];
+function planRuns() {
+  const byD = new Map();
+  TRANSFERS.forEach(t => { const d = carrier(t); (byD.get(d) || byD.set(d, []).get(d)).push(t); });
+  const runs = [];
+  byD.forEach((list, did) => {
+    const hq = DIST_BY_ID[did];
+    const pending = list.slice(); // already in priority order: vital stock-outs first
+    let n = 0;
+    while (pending.length) {
+      const cur = [pending.shift()];
+      for (let i = 0; i < pending.length; ) {
+        const t = pending[i], trial = route(hq, [...cur, t]);
+        // join only if the run stays within a working day and costs no more than a separate trip
+        if (trial.hours <= MAX_H && trial.km <= route(hq, cur).km + route(hq, [t]).km + 1e-9) { cur.push(t); pending.splice(i, 1); } else i++;
+      }
+      const r = route(hq, cur);
+      runs.push({ id: `${did}-${++n}`, district: did, transfers: cur, ...r, cold: cur.some(t => t.m.cold), over: r.hours > MAX_H, vital: cur.some(t => t.m.ven === "V" && t.type === "stockout") });
+    }
+  });
+  runs.sort((a, b) => (b.vital - a.vital) || b.transfers.length - a.transfers.length);
+  return runs;
+}
+// the donor's or the receiver's district vehicle, whichever makes the shorter separate trip
+function carrier(t) {
+  if (t.from.district === t.to.district) return t.from.district;
+  return route(DIST_BY_ID[t.from.district], [t]).km <= route(DIST_BY_ID[t.to.district], [t]).km ? t.from.district : t.to.district;
+}
+const directKm = trs => trs.reduce((a, t) => a + route(DIST_BY_ID[carrier(t)], [t]).km, 0);
+
+// ================= PHC work orders =================
+let ORDERS = [];
+function smsFor(o) {
+  const parts = [];
+  if (o.verify) parts.push(`COUNT STOCK and reply before dispatch, last report ${o.phc.lastReport} d ago.`);
+  o.send.forEach(t => parts.push(`SEND ${t.m.id} ${t.qty} to ${t.to.id}.`));
+  o.receive.forEach(t => parts.push(`RECV ${t.m.id} ${t.qty} from ${t.from.id}.`));
+  o.indent.forEach(i => parts.push(`INDENT ${i.m.id} ${i.qty} raised.`));
+  parts.push("Reply OK or NO.");
+  const head = `AG ${o.phc.id}: `, one = head + parts.join(" ");
+  if (one.length <= 160) return [one];
+  const cap = 160 - head.length - 6, msgs = []; // room for a "12/12 " counter
+  let cur = "";
+  parts.forEach(x => { if (cur && (cur + " " + x).length > cap) { msgs.push(cur); cur = x; } else cur = cur ? cur + " " + x : x; });
+  if (cur) msgs.push(cur);
+  return msgs.map((m, i) => `${i + 1}/${msgs.length} ${head}${m}`);
+}
+function workOrders() {
+  const by = new Map(), get = p => by.get(p) || by.set(p, { phc: p, send: [], receive: [], indent: [] }).get(p);
+  TRANSFERS.forEach(t => { get(t.from).send.push(t); get(t.to).receive.push(t); });
+  INDENTS.forEach(i => get(i.p).indent.push(i));
+  return [...by.values()].map(o => { o.verify = o.phc.lastReport >= 3; o.sms = smsFor(o); return o; })
+    .sort((a, b) => (b.verify - a.verify) || a.phc.id.localeCompare(b.phc.id));
+}
+
+// ================= forecast backtest =================
+// hold out the last 14 days, fit on the rest, compare with a naive 28-day mean; skip days that are not real demand
+let BACKTEST = null;
+function backtest() {
+  if (BACKTEST) return BACKTEST;
+  const HO = 14, fitN = HIST - HO;
+  let em = 0, en = 0, bias = 0, act = 0, n = 0, skipped = 0;
+  const so = { em: 0, en: 0, act: 0, lines: 0 };
+  const perLine = new Map();
+  PHCS.forEach(p => MEDS.forEach(m => {
+    const raw = p.hist[m.id], fit = baseForecast(raw.slice(0, fitN)), cl = BASE[p.id][m.id].clean;
+    const bad = new Set([...cl.censored, ...cl.outliers].map(c => c.t));
+    let lm = 0, ln = 0, lc = 0;
+    for (let k = 0; k < HO; k++) {
+      const t = fitN + k;
+      if (bad.has(t)) { skipped++; continue; }
+      const a = raw[t], fm = fit.f[k], fn = fit.naive;
+      em += Math.abs(fm - a); en += Math.abs(fn - a); bias += fm - a; act += a; n++;
+      lm += Math.abs(fm - a); ln += Math.abs(fn - a); lc++;
+    }
+    perLine.set(p.id + m.id, { mae: lc ? lm / lc : null, naive: lc ? ln / lc : null, days: lc });
+    // only lines whose empty-shelf days fall inside the 28 days the naive average looks at
+    if (cl.censored.some(c => c.t >= fitN - 28 && c.t < fitN) && lc) { so.em += lm; so.en += ln; so.act += raw.slice(fitN).filter((_, k) => !bad.has(fitN + k)).reduce((a, v) => a + v, 0); so.lines++; }
+  }));
+  BACKTEST = { maeModel: em / n, maeNaive: en / n, wapeModel: em / act, wapeNaive: en / act, biasModel: bias / n, lines: PHCS.length * MEDS.length, days: n, skippedDays: skipped, perLine,
+    withStockouts: { wapeModel: so.act ? so.em / so.act : null, wapeNaive: so.act ? so.en / so.act : null, lines: so.lines } };
+  logStage("backtest", { lines: BACKTEST.lines, holdoutDays: HO }, { wapeModel: +BACKTEST.wapeModel.toFixed(4), wapeNaive: +BACKTEST.wapeNaive.toFixed(4), days: n, skippedDays: skipped, withStockouts: BACKTEST.withStockouts });
+  return BACKTEST;
+}
+
+// runs the planning stages after the transfer planner and logs each boundary
+function planDownstream() {
+  logStage("plan", { lines: EVALS.length, scenario, districts: [...activeDistricts] }, { transfers: TRANSFERS.length, indents: INDENTS.length });
+  IMPACT = simulateImpact();
+  logStage("impact", { transfers: TRANSFERS.length }, { none: { ...IMPACT.none }, plan: { ...IMPACT.plan } });
+  RUNS = planRuns();
+  logStage("runs", { transfers: TRANSFERS.length }, { runs: RUNS.length, runKm: Math.round(RUNS.reduce((a, r) => a + r.km, 0)), over: RUNS.filter(r => r.over).length });
+  ORDERS = workOrders();
+  logStage("orders", { transfers: TRANSFERS.length, indents: INDENTS.length }, { phcs: ORDERS.length, sms: ORDERS.reduce((a, o) => a + o.sms.length, 0), verify: ORDERS.filter(o => o.verify).length });
+}
+
 // ================= helpers =================
 const $ = s => document.querySelector(s);
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -891,13 +1101,15 @@ function renderOverview() {
     { k: "Bed occupancy", v: Math.round(occ / beds * 100) + "%", s: `${occ} of ${beds} beds`, c: occ / beds > 0.85 ? "warn" : "" },
   ]);
   const place = districtFilter === "all" ? "Andhra Pradesh" : DIST_BY_ID[districtFilter].name;
+  const imp = impactIn();
   const nStock = tr.filter(t => t.type === "stockout").length, nExp = tr.filter(t => t.type === "expiry").length;
   const plural = (n, one, many) => `${fmt(n)} ${n === 1 ? one : many}`;
   $("#hero-meta").textContent = `${place} · ${plural(phcs.length, "PHC", "PHCs")} · ${sc.name.toLowerCase()}`;
   $("#headline").innerHTML = out7
     ? `<em class="crit">${fmt(out7)}</em> medicine ${out7 === 1 ? "line runs" : "lines run"} dry within <em>7 days</em>`
     : `No medicine runs dry in <em>${esc(place)}</em> this week`;
-  $("#lede").textContent = `Across ${plural(phcs.length, "Primary Health Centre", "Primary Health Centres")}, ${plural(nStock, "transfer", "transfers")} would move surplus to the centres about to run out, and ${plural(nExp, "more sends", "more send")} near-expiry lots where they will be used in time, keeping ${inr(saved)} of medicine out of the bin.`;
+  $("#lede").textContent = `Across ${plural(phcs.length, "Primary Health Centre", "Primary Health Centres")}, ${plural(nStock, "transfer", "transfers")} would move surplus to the centres about to run out, and ${plural(nExp, "more sends", "more send")} near-expiry lots where they will be used in time, keeping ${inr(saved)} of medicine out of the bin.${imp.none.outDays > 0.05 ? ` Sending them today cuts stock-out days before resupply from ${fmt(imp.none.outDays)} to ${fmt(imp.plan.outDays)}.` : ""}`;
+  renderImpact(imp);
 
   const W = 560, Hh = 460, lon0 = 76.8, lon1 = 85.0, lat0 = 12.7, lat1 = 19.2;
   const X = lon => 30 + (lon - lon0) / (lon1 - lon0) * (W - 60);
@@ -939,6 +1151,39 @@ function renderOverview() {
   ] }, options: { indexAxis: "y", scales: { x: { stacked: true, ticks: { precision: 0 }, grid: { color: css("--line") } }, y: { stacked: true, grid: { display: false }, ticks: { autoSkip: false } } }, plugins: { legend: { position: "bottom" } } } });
 }
 
+function renderImpact(imp) {
+  const cut = (a, b) => a > 0.05 ? `${fmt((1 - b / a) * 100)}% fewer` : "None to prevent";
+  const card = (k, a, b, s, d = 0) => `<div class="imp"><span class="k">${k}</span><span class="v"><s>${fmt(a, d)}</s><i aria-hidden="true">→</i><b>${fmt(b, d)}</b></span><span class="s">${s}</span></div>`;
+  $("#impact").innerHTML =
+    card("Vital-medicine stock-out days", imp.none.vitalOutDays, imp.plan.vitalOutDays, cut(imp.none.vitalOutDays, imp.plan.vitalOutDays)) +
+    card("Stock-out days, all medicines", imp.none.outDays, imp.plan.outDays, cut(imp.none.outDays, imp.plan.outDays)) +
+    card("Doses patients would go without", imp.none.unmetUnits, imp.plan.unmetUnits, "Tablets, sachets, vials and bottles") +
+    card("Medicine lines that run out", imp.none.linesOut, imp.plan.linesOut, "The rest are left for warehouse indents");
+  const ds = DISTRICTS.filter(d => districtFilter === "all" || d.id === districtFilter);
+  chart("c-impact", { type: "bar", data: { labels: ds.map(d => d.name), datasets: [
+    { label: "If nothing is done", data: ds.map(d => +IMPACT.byDistrict[d.id].none.outDays.toFixed(1)), backgroundColor: css("--crit"), borderRadius: 3 },
+    { label: "With the transfer plan", data: ds.map(d => +IMPACT.byDistrict[d.id].plan.outDays.toFixed(1)), backgroundColor: css("--ok"), borderRadius: 3 },
+  ] }, options: { scales: { x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 45 } }, y: { beginAtZero: true, title: { display: true, text: "stock-out days" }, grid: { color: css("--line") } } }, plugins: { legend: { position: "bottom" } } } });
+}
+
+// ================= dispatch =================
+function renderDispatch() {
+  const touch = t => inDistrict(t.from) || inDistrict(t.to);
+  const runs = RUNS.filter(r => r.transfers.some(touch));
+  const orders = ORDERS.filter(o => inDistrict(o.phc) || o.send.some(touch) || o.receive.some(touch));
+  const rKm = runs.reduce((a, r) => a + r.km, 0), dKm = directKm(runs.flatMap(r => r.transfers));
+  tiles("#dp-tiles", [
+    { k: "Vehicle runs", v: runs.length, s: `${runs.filter(r => r.cold).length} need a cold box${runs.some(r => r.over) ? ` · ${runs.filter(r => r.over).length} need an overnight stop` : ""}` },
+    { k: "Road km", v: fmt(rKm), s: dKm ? `vs ${fmt(dKm)} km as separate trips, ${fmt((1 - rKm / dKm) * 100)}% less` : "No trips needed", c: "good" },
+    { k: "Driving hours", v: fmt(runs.reduce((a, r) => a + r.hours, 0), 1), s: `longest run ${fmt(Math.max(0, ...runs.map(r => r.hours)), 1)} h` },
+    { k: "PHCs to message", v: orders.length, s: `${orders.filter(o => o.verify).length} must count stock first`, c: orders.some(o => o.verify) ? "warn" : "" },
+  ]);
+  const stop = st => st.pickups.length ? `<span class="stop up" title="Collect ${esc(st.pickups.map(t => `${t.qty} ${t.m.id}`).join(", "))}">↑${st.phc.id}</span>` : `<span class="stop down" title="Deliver ${esc(st.drops.map(t => `${t.qty} ${t.m.id}`).join(", "))}">↓${st.phc.id}</span>`;
+  $("#run-body").innerHTML = runs.map(r => `<tr><td class="mono">${r.id}${r.vital ? ' <span class="tag crit">V</span>' : ""}</td><td class="route"><span class="sub">${esc(DIST_BY_ID[r.district].name)} HQ</span><span class="arrow">→</span>${r.stops.map(stop).join('<span class="arrow">→</span>')}<span class="arrow">→</span><span class="sub">HQ</span></td><td class="n">${r.transfers.length}</td><td class="n">${fmt(r.km)}</td><td class="n">${fmt(r.hours, 1)}${r.over ? ' <span class="tag warn">overnight</span>' : ""}</td><td>${r.cold ? '<span class="tag info">cold box</span>' : ""}</td><td>${approved ? '<span class="pill ok">Dispatched</span>' : '<span class="pill warn">Ready</span>'}</td></tr>`).join("") || `<tr><td colspan="7">No vehicle runs needed in this selection.</td></tr>`;
+  const items = (list, f) => list.map(f).join("<br>") || '<span class="sub">–</span>';
+  $("#order-body").innerHTML = orders.map(o => `<tr><td><span class="mono">${o.phc.id}</span> <span class="sub">${esc(o.phc.name)}</span>${o.verify ? '<br><span class="tag warn">count stock first</span>' : ""}</td><td>${items(o.send, t => `${fmt(t.qty)} ${t.m.id} → <span class="mono">${t.to.id}</span>`)}</td><td>${items(o.receive, t => `${fmt(t.qty)} ${t.m.id} ← <span class="mono">${t.from.id}</span>`)}</td><td>${items(o.indent, i => `${fmt(i.qty)} ${i.m.id}`)}</td><td class="sms">${o.sms.map(m => `<div>${esc(m)}</div>`).join("")}</td></tr>`).join("") || `<tr><td colspan="5">No PHC needs to act in this selection.</td></tr>`;
+}
+
 // ================= surveillance =================
 let svSel = null;
 function renderSurveillance() {
@@ -967,7 +1212,20 @@ function renderSurveillance() {
 
 // ================= stock =================
 let selected = null, pendingSel = null;
+function renderBacktest() {
+  const b = backtest(), w = b.withStockouts;
+  const card = (k, v, s) => `<div class="imp"><span class="k">${k}</span><span class="v">${v}</span><span class="s">${s}</span></div>`;
+  // the lower error gets the "better" colour, whichever model it is
+  const pair = (mv, nv) => { const mw = mv <= nv; return `<span style="color:var(${mw ? "--ok" : "--crit"})">${fmt(mv * 100, 1)}%</span><i>vs</i><span style="color:var(${mw ? "--crit" : "--ok"})">${fmt(nv * 100, 1)}%</span>`; };
+  const verdict = (mv, nv) => Math.abs(mv - nv) < 0.005 ? "About the same as" : mv < nv ? `${fmt((1 - mv / nv) * 100)}% less error than` : `${fmt((mv / nv - 1) * 100)}% more error than`;
+  $("#bt-tiles").innerHTML =
+    card("Error, all lines: model vs 28-day average", pair(b.wapeModel, b.wapeNaive), `${verdict(b.wapeModel, b.wapeNaive)} the simple average (WAPE, share of actual use missed, ${fmt(b.lines)} lines)`) +
+    (w.lines ? card(`Lines that had stock-outs (${w.lines})`, pair(w.wapeModel, w.wapeNaive), `${verdict(w.wapeModel, w.wapeNaive)} the average, which learns from the zeros recorded while shelves were empty`) : "") +
+    card("Bias", `${b.biasModel >= 0 ? "+" : "−"}${fmt(Math.abs(b.biasModel), 2)}`, `units/day, ${b.biasModel >= 0 ? "over" : "under"}-forecast on average`) +
+    card("Days scored", fmt(b.days), `${fmt(b.skippedDays)} skipped: stock-out days and entry errors are not real demand`);
+}
 function renderStock() {
+  renderBacktest();
   const mf = $("#med-filter").value, sf = $("#status-filter").value;
   const rows = EVALS.filter(e => inDistrict(e.p) && (mf === "all" || e.m.id === mf) && (sf === "all" || e.status === sf))
     .sort((a, b) => ({ crit: 0, warn: 1, ok: 2, surplus: 3 }[a.status] - { crit: 0, warn: 1, ok: 2, surplus: 3 }[b.status]) || VEN_RANK[a.m.ven] - VEN_RANK[b.m.ven] || b.pOut - a.pOut || a.cover - b.cover).slice(0, 300);
@@ -1021,6 +1279,7 @@ function renderDetail() {
   <dt>Stock-out probability</dt><dd class="num">${Math.round(e.pOut * 100)}%</dd>
   <dt>Lots</dt><dd>${e.batches.map(b => `${b.lot}: ${fmt(b.qty)} exp ${dateIn(b.exp)}${b.waste > 0 ? ` <span class="tag crit">${fmt(b.waste)} will expire</span>` : ""}`).join("<br>") || "None"}</dd>
   <dt>History corrections</dt><dd>${cl.censored.length || cl.outliers.length ? `${cl.censored.length ? `${cl.censored.length} stock-out days re-estimated.` : ""} ${cl.outliers.length ? `${cl.outliers.length} entry error${cl.outliers.length > 1 ? "s" : ""} capped.` : ""}${bias}` : "None needed"}</dd>
+  <dt>Backtest, last 14 days</dt><dd>${(bt => bt && bt.days ? `off by ${fmt(bt.mae, 1)} ${e.m.unit}/day on average; a 28-day average was off by ${fmt(bt.naive, 1)}` : "Not enough clean days to score")(backtest().perLine.get(e.p.id + e.m.id))}</dd>
   <dt>Classification</dt><dd>${VEN_NAME[e.m.ven]}${e.m.cold ? ` · cold chain (2–8 °C), fridge ${e.p.ilrOk ? "working" : "<b>faulty</b>"}` : ""}</dd>
   <dt>Action</dt><dd>${tr.length ? tr.map(t => `Receive ${fmt(t.qty)} from ${t.from.id} (${fmt(t.km)} km)`).join("; ") : out.length ? out.map(t => `Send ${fmt(t.qty)} to ${t.to.id}${t.type === "expiry" ? " before expiry" : ""}`).join("; ") : e.coldFault ? "Repair refrigerator, then restock" : e.status === "crit" ? "Indent from state warehouse" : e.status === "surplus" ? "Available as donor" : "None needed"}</dd>`;
 }
@@ -1315,10 +1574,10 @@ function ingest() {
 
 // ================= wiring =================
 let view = "overview";
-const VIEWS = ["overview", "surveillance", "stock", "expiry", "redistribute", "capacity", "quality", "federated", "brief"];
+const VIEWS = ["overview", "surveillance", "stock", "expiry", "redistribute", "dispatch", "capacity", "quality", "federated", "brief"];
 function refresh() {
-  recompute(); planTransfers();
-  ({ overview: renderOverview, surveillance: renderSurveillance, stock: renderStock, expiry: renderExpiry, redistribute: renderRedistribute, capacity: renderCapacity, quality: renderQuality, federated: () => { if (!fedDone) runFederated(); }, brief: genBrief })[view]();
+  recompute(); planTransfers(); planDownstream();
+  ({ overview: renderOverview, surveillance: renderSurveillance, stock: renderStock, expiry: renderExpiry, redistribute: renderRedistribute, dispatch: renderDispatch, capacity: renderCapacity, quality: renderQuality, federated: () => { if (!fedDone) runFederated(); }, brief: genBrief })[view]();
 }
 function show(v) {
   view = v;
@@ -1341,7 +1600,17 @@ $("#run-fed").addEventListener("click", runFederated);
 $("#gen-brief").addEventListener("click", genBrief);
 $("#lang").addEventListener("change", genBrief);
 $("#copy-brief").addEventListener("click", () => copyText($("#brief-out").textContent, "Brief copied"));
-$("#approve-all").addEventListener("click", () => { approved = true; renderRedistribute(); toast(`${TRANSFERS.length} transfer orders approved and sent to PHC pharmacists`); });
+$("#approve-all").addEventListener("click", () => { approved = true; renderRedistribute(); toast(`${TRANSFERS.length} transfer orders approved. ${RUNS.length} vehicle runs are ready in Dispatch.`); });
+$("#copy-sms").addEventListener("click", () => {
+  const list = ORDERS.filter(o => inDistrict(o.phc) || [...o.send, ...o.receive].some(t => inDistrict(t.from) || inDistrict(t.to)));
+  copyText(list.flatMap(o => o.sms).join("\n"), `${list.reduce((a, o) => a + o.sms.length, 0)} SMS copied for ${list.length} PHCs`);
+});
+$("#copy-runs").addEventListener("click", () => {
+  const runs = RUNS.filter(r => r.transfers.some(t => inDistrict(t.from) || inDistrict(t.to)));
+  const sheet = runs.map(r => [`RUN ${r.id} · ${DIST_BY_ID[r.district].name} HQ · ${fmt(r.km)} km · ${fmt(r.hours, 1)} h${r.cold ? " · COLD BOX" : ""}`,
+    ...r.stops.map((st, i) => `${i + 1}. ${st.phc.id} ${st.phc.name}: ${st.pickups.length ? "COLLECT " + st.pickups.map(t => `${t.qty} ${t.m.unit} ${t.m.name} for ${t.to.id}`).join("; ") : "DELIVER " + st.drops.map(t => `${t.qty} ${t.m.unit} ${t.m.name} from ${t.from.id}`).join("; ")}`)].join("\n")).join("\n\n");
+  copyText(sheet, `${runs.length} run sheets copied`);
+});
 $("#copy-csv").addEventListener("click", () => {
   const csv = ["type,medicine,from_phc,to_phc,qty,unit,road_km,eta_hours,lot", ...TRANSFERS.map(t => [t.type, `"${t.m.name}"`, t.from.id, t.to.id, t.qty, t.m.unit, Math.round(t.km), t.eta.toFixed(1), t.lot ? t.lot.lot : ""].join(","))].join("\n");
   copyText(csv, `${TRANSFERS.length} orders copied as CSV`);
@@ -1374,7 +1643,7 @@ const TOUR = [
   { v: "overview", t: "The network at a glance", d: "Each dot is a Primary Health Centre, coloured by how many medicines it will run out of. Moving lines are the transfers the system recommends: gold prevents a stock-out, blue rescues stock that would expire. Click a dot to open its forecast." },
   { v: "surveillance", t: "Outbreaks, days early", d: "Clinic visit counts for fever, diarrhoea and heat illness are screened every day with the CDC EARS C2 method. An alert can switch medicine forecasts to outbreak demand for just the affected districts, before the outbreak is declared." },
   { v: "stock", t: "A forecast for every shelf", d: "All 528 medicine lines get a 14-day demand forecast with an 80% band. Blue dots mark days the PHC had run out: the model re-estimates them, so an empty shelf is not mistaken for low demand." },
-  { v: "redistribute", t: "Move stock, not money", d: "Surplus goes to PHCs about to run out, and near-expiry lots go where they will be used in time. Vaccines and insulin travel only between working fridges. What no neighbour can cover becomes a warehouse order, vital medicines first." },
+  { v: "redistribute", t: "Move stock, not money", d: "Surplus goes to PHCs about to run out, and near-expiry lots go where they will be used in time. Vaccines and insulin travel only between working fridges. What no neighbour can cover becomes a warehouse order. The Dispatch tab then groups the transfers into vehicle runs and writes an SMS for every pharmacist." },
   { v: "federated", t: "Learn together, share nothing", d: "Six BRICS health systems train one demand model. Only model weights cross borders; patient and facility records stay in each country. Nodes with little data gain the most." },
   { v: "brief", t: "A brief the DHO can act on", d: "Gemini turns the live numbers into a briefing in any language, and the exact data sent to the model is shown beside it. Without an API key, a built-in template writes it in English, Hindi or Portuguese." },
 ];
@@ -1416,6 +1685,9 @@ chartDefaults();
 setScenario("normal", null, "manual");
 const start = (location.hash || "").slice(1);
 show(VIEWS.includes(start) ? start : "overview");
+// read-only hook for tests/golden (planning stages are otherwise private to this closure)
+window.__AG_TEST = Object.freeze({ lineOut, smsFor, route, carrier, directKm, backtest, DIST_BY_ID, PHC_BY_ID, MED_BY_ID,
+  get IMPACT() { return IMPACT; }, get RUNS() { return RUNS; }, get ORDERS() { return ORDERS; }, get TRANSFERS() { return TRANSFERS; }, get INDENTS() { return INDENTS; }, get EVALS() { return EVALS; } });
 let tourDone = false;
 try { tourDone = localStorage.getItem("ag-tour-done") === "1"; } catch (e) {}
 if (!tourDone) tourOpen(false);
