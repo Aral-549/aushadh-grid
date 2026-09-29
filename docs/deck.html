@@ -1,18 +1,18 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Aushadh Grid deck</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Tiro+Devanagari+Hindi&display=swap">
 <style>
 @page { size: 1280px 720px; margin: 0; }
-:root { --bg:#eef3f3; --surface:#fff; --ink:#0f1f24; --muted:#56696e; --line:#d3dfe0; --accent:#0b6e69; --crit:#c62828; --warn:#a86a12; --ok:#2f7d52; --info:#2b62a8;
-  --d:"Familjen Grotesk","Segoe UI",sans-serif; --b:"IBM Plex Sans","Segoe UI",sans-serif; --m:"IBM Plex Mono",monospace; }
+:root { --bg:#f1f4f3; --surface:#fff; --ink:#0b1e25; --muted:#53686d; --line:#d4dfdf; --accent:#b86e0e; --crit:#c8322f; --warn:#a76a0c; --ok:#1f8a57; --info:#2f64b5;
+  --d:"Big Shoulders Display","Arial Narrow",sans-serif; --b:"Instrument Sans","Segoe UI",sans-serif; --m:"JetBrains Mono",monospace; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--b); }
 .s { width: 1280px; height: 720px; padding: 52px 72px 60px; position: relative; page-break-after: always; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; gap: 20px; }
-.s.dark { background: #0b2a2a; color: #e6f2f1; }
-.s.dark .eyebrow, .s.dark .muted { color: #8fc9c3; }
-h1, h2 { font-family: var(--d); margin: 0; letter-spacing: -0.015em; text-wrap: balance; }
-h1 { font-size: 76px; line-height: 1; }
-h2 { font-size: 40px; line-height: 1.08; max-width: 28ch; }
+.s.dark { background: radial-gradient(900px 500px at 85% 0%, #134454 0%, transparent 60%), #0a2530; color: #eef4f2; }
+.s.dark .eyebrow { color: #eeaa3c; } .s.dark .muted { color: #9bb7b8; }
+h1, h2 { font-family: var(--d); margin: 0; letter-spacing: 0.005em; text-wrap: balance; font-weight: 800; text-transform: uppercase; }
+h1 { font-size: 112px; line-height: 0.92; } h1 span { color: #eeaa3c; }
+h2 { font-size: 50px; line-height: 1; max-width: 30ch; }
 p { margin: 0; font-size: 20px; line-height: 1.45; max-width: 62ch; }
 .eyebrow { font-family: var(--m); font-size: 15px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
 .muted { color: var(--muted); }
@@ -21,15 +21,15 @@ p { margin: 0; font-size: 20px; line-height: 1.45; max-width: 62ch; }
 .cols.eq { grid-template-columns: 1fr 1fr; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
-.card b { font-family: var(--d); font-size: 21px; }
+.card b { font-family: var(--d); font-size: 25px; font-weight: 700; letter-spacing: .01em; }
 .card span { font-size: 15.5px; color: var(--muted); line-height: 1.45; }
-.big { font-family: var(--d); font-size: 48px; font-weight: 700; line-height: 1; }
+.big { font-family: var(--d); font-size: 60px; font-weight: 800; line-height: 1; }
 .big.ok { color: var(--ok); } .big.crit { color: var(--crit); }
-.shot { border: 1px solid var(--line); border-radius: 10px; width: 100%; height: 100%; object-fit: cover; object-position: top left; box-shadow: 0 10px 30px rgba(15,31,36,.12); min-height: 0; display: block; }
+.shot { border: 1px solid var(--line); border-radius: 10px; width: 100%; height: 100%; object-fit: cover; object-position: top left; box-shadow: 0 18px 40px -18px rgba(11,30,37,.45); min-height: 0; display: block; }
 ul { margin: 0; padding-left: 22px; font-size: 18px; line-height: 1.45; display: grid; gap: 8px; }
 .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .flow .n { font-family: var(--m); font-size: 13px; color: var(--accent); }
-.mark { width: 64px; height: 64px; border-radius: 14px; background: #40b8ad; display: grid; place-items: center; }
+.mark { width: 72px; height: 72px; border-radius: 16px; background: #eeaa3c; color: #1c1204; display: grid; place-items: center; font-family: "Tiro Devanagari Hindi", serif; font-size: 40px; padding-top: 8px; box-shadow: inset 0 -4px 0 rgba(0,0,0,.18); }
 table { border-collapse: collapse; font-size: 17px; width: 100%; }
 td, th { padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left; }
 th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
@@ -39,11 +39,11 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
 </style></head><body>
 
 <section class="s dark" style="justify-content:center">
-  <div class="mark"><svg width="34" height="34" viewBox="0 0 18 18"><rect x="7" y="2" width="4" height="14" rx="1" fill="#062321"/><rect x="2" y="7" width="14" height="4" rx="1" fill="#062321"/></svg></div>
+  <div class="mark">औ</div>
   <span class="eyebrow">Track 3 · Smart Health &amp; Supply Chain Resilience</span>
-  <h1>Aushadh Grid</h1>
+  <h1>Aushadh <span>Grid</span></h1>
   <p style="font-size:26px;max-width:42ch">Federated AI for PHC medicine supply chains. It spots outbreaks early, forecasts demand from messy real-world data, and moves stock between centres before anyone runs out or throws medicine away.</p>
-  <div class="foot" style="color:#8fc9c3"><span>Build with AI: Code for Communities · Second Edition</span><span>BRICS theme: Resilience</span></div>
+  <div class="foot" style="color:#9bb7b8"><span>Build with AI: Code for Communities · Second Edition</span><span>BRICS theme: Resilience</span></div>
 </section>
 
 <section class="s">
