@@ -19,3 +19,31 @@ resolved — it's just hidden until the next rewrite.
 - **Stage/module:** Presentation layer, table styles (`src/app.html` CSS)
 - **Regression case added:** `tests/golden/ui_cases.js` — case `c11-transfers-fit-1440` (mode `default`, run with a visible scrollbar)
 - **Status:** fixed
+
+## 2026-09-29 — Backtest cards implied the model won when it lost
+- **Symptom:** The Stock view showed the model's error (22.0%) in green and the 28-day average's (21.3%) in red with a strike-through, although the average had the lower error.
+- **Root cause:** Colours were hard-coded per card (model = good, naive = bad) instead of following the numbers.
+- **Stage/module:** Presentation layer, `renderBacktest` (`src/app.html`)
+- **Regression case added:** `tests/golden/impact_cases.js` — cases `D5-colour-follows-winner`, `D3-honest-verdict`
+- **Status:** fixed
+
+## 2026-09-29 — Cross-district transfers made 15-hour vehicle runs
+- **Symptom:** 11 of 42 runs exceeded an 8-hour day (longest 15.2 h) because every transfer rode on the donor district's vehicle, even when the receiver's district vehicle was much closer.
+- **Root cause:** `planRuns` grouped by `t.from.district` only.
+- **Stage/module:** Dispatch planner, `planRuns` / `carrier` (`src/app.html`)
+- **Regression case added:** `tests/golden/impact_cases.js` — invariant `B7-cheaper-*` inside `A5-A6-B-C-invariants-all-scenarios`
+- **Status:** fixed (11 runs still need an overnight stop: they carry single hauls of up to 250 km that the transfer planner allows; flagged in the UI as "overnight")
+
+## 2026-09-29 — Stock-count threshold not covered by any test
+- **Symptom:** Mutation testing: changing the stale-report threshold from 3 to 4 days in `workOrders` left the whole suite green.
+- **Root cause:** No PHC with a transfer has a report exactly 3 days old in the synthetic data, so the invariant never exercised the boundary.
+- **Stage/module:** Test suite gap for PHC work orders
+- **Regression case added:** `tests/golden/impact_cases.js` — case `C3-boundary-3-days`
+- **Status:** fixed (mutant now fails the suite)
+
+## 2026-09-29 — Forecast is less accurate than a 28-day average
+- **Symptom:** 14-day holdout backtest: model WAPE 22.0% vs 21.3% for a plain 28-day mean; on lines with recent stock-outs 25.1% vs 24.3%.
+- **Root cause:** The Holt trend term (beta 0.08, damped after 21 days) extrapolates noise. Scratch experiment with no trend: 19.9% (alpha 0.3) to 19.0% (alpha 0.1), and 20.0% vs 24.3% on stock-out lines.
+- **Stage/module:** Forecast engine, `baseForecast` (`src/app.html`)
+- **Regression case added:** pending. The fix changes `tests/golden/engine_baseline.json`, which needs explicit human approval; parameters should be chosen on an earlier validation window, not the reported holdout.
+- **Status:** open

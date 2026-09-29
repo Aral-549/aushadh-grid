@@ -72,5 +72,5 @@ EARS C2 and transfer planner stay as they are (guarded by
 ## Status
 - [x] Drafted
 - [x] Reviewed by a human (all four modules approved 2026-09-29)
-- [ ] Implementation matches this contract
-- [ ] Golden tests exist for every behavior case above
+- [x] Implementation matches this contract
+- [x] Golden tests exist for every behavior case above (`tests/golden/impact_cases.js`, mutation-checked)

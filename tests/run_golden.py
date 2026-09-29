@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Runs tests/golden/ui_cases.js against the real built index.html in headless Chromium.
+"""Runs the golden cases in tests/golden/*.js against the real built index.html in headless Chromium.
 
 Usage: python3 tests/run_golden.py   (needs chromium or google-chrome on PATH)
 Exit code is non-zero if any case fails.
@@ -36,6 +36,7 @@ RUNS = [
     ("deep link #stock", "index.html?mode=deeplink#stock", ["--window-size=1280,900"]),
     ("unknown hash #foo", "index.html?mode=badhash#foo", ["--window-size=1280,900"]),
     ("stored light, OS dark", "index.html?mode=storedlight", ["--blink-settings=preferredColorScheme=0", "--window-size=1280,900"]),
+    ("plan impact, runs, orders, backtest", "index.html?mode=impact", ["--window-size=1440,1000"]),
     ("phone 360px", "frame360.html", ["--window-size=900,800"]),
     ("phone 390px", "frame390.html", ["--window-size=900,800"]),
 ]
@@ -49,7 +50,7 @@ def main():
         shutil.copytree(os.path.join(ROOT, "vendor"), os.path.join(work, "vendor"))
         page = open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
         base = json.load(open(os.path.join(ROOT, "tests/golden/engine_baseline.json"), encoding="utf-8"))
-        cases = open(os.path.join(ROOT, "tests/golden/ui_cases.js"), encoding="utf-8").read()
+        cases = "\n".join(open(os.path.join(ROOT, "tests/golden", f), encoding="utf-8").read() for f in ("ui_cases.js", "impact_cases.js"))
         page = page.replace("<head>\n", "<head>\n" + PRE % json.dumps(base), 1)
         page = page.replace("</body>", "<script>\n" + cases + "\n</script>\n</body>", 1)
         open(os.path.join(work, "index.html"), "w", encoding="utf-8").write(page)
@@ -71,8 +72,12 @@ def main():
                                      capture_output=True, text=True, timeout=120).stdout
             finally:
                 shutil.rmtree(prof, ignore_errors=True)
-            m = re.search(r'<pre id="GOLDEN">(.*?)</pre>', out, re.S)
-            res = json.loads(m.group(1).replace("&gt;", ">").replace("&lt;", "<").replace("&amp;", "&")) if m else {"harness-no-result": [False, "page produced no GOLDEN block"]}
+            # each case file appends its own GOLDEN block; merge them (later files win on a shared id such as no-js-errors)
+            res = {}
+            for block in re.findall(r'<pre id="GOLDEN">(.*?)</pre>', out, re.S):
+                res.update(json.loads(block.replace("&gt;", ">").replace("&lt;", "<").replace("&amp;", "&")))
+            if not re.search(r'<pre id="GOLDEN">', out):
+                res = {"harness-no-result": [False, "page produced no GOLDEN block"]}
             if not res:
                 res = {"harness-empty": [False, "no cases ran"]}
             print(f"\n== {label}")
