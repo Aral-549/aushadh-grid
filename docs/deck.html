@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Aushadh Grid deck</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+@page { size: 1280px 720px; margin: 0; }
+:root { --bg:#eef3f3; --surface:#fff; --ink:#0f1f24; --muted:#56696e; --line:#d3dfe0; --accent:#0b6e69; --crit:#c62828; --warn:#a86a12; --ok:#2f7d52; --info:#2b62a8;
+  --d:"Familjen Grotesk","Segoe UI",sans-serif; --b:"IBM Plex Sans","Segoe UI",sans-serif; --m:"IBM Plex Mono",monospace; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--b); }
+.s { width: 1280px; height: 720px; padding: 52px 72px 60px; position: relative; page-break-after: always; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; gap: 20px; }
+.s.dark { background: #0b2a2a; color: #e6f2f1; }
+.s.dark .eyebrow, .s.dark .muted { color: #8fc9c3; }
+h1, h2 { font-family: var(--d); margin: 0; letter-spacing: -0.015em; text-wrap: balance; }
+h1 { font-size: 76px; line-height: 1; }
+h2 { font-size: 40px; line-height: 1.08; max-width: 28ch; }
+p { margin: 0; font-size: 20px; line-height: 1.45; max-width: 62ch; }
+.eyebrow { font-family: var(--m); font-size: 15px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.muted { color: var(--muted); }
+.foot { position: absolute; left: 72px; right: 72px; bottom: 24px; display: flex; justify-content: space-between; font-family: var(--m); font-size: 12px; color: var(--muted); }
+.cols { display: grid; grid-template-columns: 1.15fr 1fr; gap: 28px; flex: 1; min-height: 0; }
+.cols.eq { grid-template-columns: 1fr 1fr; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
+.card b { font-family: var(--d); font-size: 21px; }
+.card span { font-size: 15.5px; color: var(--muted); line-height: 1.45; }
+.big { font-family: var(--d); font-size: 48px; font-weight: 700; line-height: 1; }
+.big.ok { color: var(--ok); } .big.crit { color: var(--crit); }
+.shot { border: 1px solid var(--line); border-radius: 10px; width: 100%; height: 100%; object-fit: cover; object-position: top left; box-shadow: 0 10px 30px rgba(15,31,36,.12); min-height: 0; display: block; }
+ul { margin: 0; padding-left: 22px; font-size: 18px; line-height: 1.45; display: grid; gap: 8px; }
+.flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.flow .n { font-family: var(--m); font-size: 13px; color: var(--accent); }
+.mark { width: 64px; height: 64px; border-radius: 14px; background: #40b8ad; display: grid; place-items: center; }
+table { border-collapse: collapse; font-size: 17px; width: 100%; }
+td, th { padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.pill { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 13px; font-weight: 600; background: #e2f2e8; color: var(--ok); }
+.stack { display: grid; gap: 14px; align-content: center; }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+</style></head><body>
+
+<section class="s dark" style="justify-content:center">
+  <div class="mark"><svg width="34" height="34" viewBox="0 0 18 18"><rect x="7" y="2" width="4" height="14" rx="1" fill="#062321"/><rect x="2" y="7" width="14" height="4" rx="1" fill="#062321"/></svg></div>
+  <span class="eyebrow">Track 3 · Smart Health &amp; Supply Chain Resilience</span>
+  <h1>Aushadh Grid</h1>
+  <p style="font-size:26px;max-width:42ch">Federated AI for PHC medicine supply chains. It spots outbreaks early, forecasts demand from messy real-world data, and moves stock between centres before anyone runs out or throws medicine away.</p>
+  <div class="foot" style="color:#8fc9c3"><span>Build with AI: Code for Communities · Second Edition</span><span>BRICS theme: Resilience</span></div>
+</section>
+
+<section class="s">
+  <span class="eyebrow">The problem, as it looks on the ground</span>
+  <h2>Shortages, waste and bad data at the same time, in the same district.</h2>
+  <div class="grid3">
+    <div class="card"><b>Stock-outs next to surplus</b><span>One PHC turns patients away while another 40 km away holds months of the same medicine. Nobody can see both.</span></div>
+    <div class="card"><b>Medicine expires on the shelf</b><span>Quiet centres hold lots that expire unused, while busy centres nearby are short of the same item.</span></div>
+    <div class="card"><b>Bad data, bad forecasts</b><span>A PHC that ran out records zero use, so models learn that demand is low. Late reports and typos add to the error.</span></div>
+    <div class="card"><b>Outbreaks declared late</b><span>Fever and diarrhoea visits rise days before confirmation, while ORS and IV fluid demand triples.</span></div>
+    <div class="card"><b>Cold chain breaks</b><span>Insulin, vaccines and oxytocin need 2–8 °C. A faulty fridge makes restocking pointless.</span></div>
+    <div class="card"><b>Tight budgets</b><span>Indents must put vital medicines first, following WHO VEN practice, with cost visible.</span></div>
+  </div>
+  <div class="foot"><span>Aushadh Grid</span><span>02</span></div>
+</section>
+
+<section class="s">
+  <span class="eyebrow">The solution</span>
+  <h2>One console for every PHC: signals, stock, expiry, transfers, beds and staff.</h2>
+  <div class="cols">
+    <img class="shot" src="img/overview-signal.jpg" alt="Overview with outbreak signal">
+    <ul style="align-self:center">
+      <li><b>Outbreak signals</b> from clinic visit counts feed straight into the demand forecast</li>
+      <li><b>Forecasts that survive messy data</b>: stock-out days, typos and late reports are handled</li>
+      <li><b>Expiry simulation</b> of every lot, first-expiry-first-out</li>
+      <li><b>Transfer orders</b> that prevent stock-outs and rescue expiring stock, cold-chain aware</li>
+      <li><b>SMS / WhatsApp / CSV</b> intake with typo checks</li>
+      <li><b>Referral finder</b>, federated BRICS model and Gemini briefs in any language</li>
+    </ul>
+  </div>
+  <div class="foot"><span>Aushadh Grid</span><span>03</span></div>
+</section>
+
+<section class="s">
+  <span class="eyebrow">1 · See the outbreak coming</span>
+  <h2>Clinic visit data triggers outbreak demand for exactly the affected districts.</h2>
+  <div class="cols">
+    <img class="shot" src="img/surveillance.jpg" alt="Outbreak signals view">
+    <div class="stack">
+      <p style="font-size:18px">Daily fever, diarrhoea and heat-illness OPD counts per district are checked with the <b>CDC EARS C2</b> method. The baseline is 7 days ending 2 days back, and an alert needs 3 SD above it on 2 of the last 3 days.</p>
+      <div class="card"><span>Pilot signal</span><div class="big crit">3.1×</div><span>fever visits in Srikakulam vs the 4-week baseline, 4 days above threshold. Vizianagaram alerts too; Visakhapatnam is on watch.</span></div>
+      <p class="muted" style="font-size:17px">One click applies outbreak demand to those three districts. Critical medicine lines rise from 51 to 62, and transfers are re-planned at once.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Aushadh Grid</span><span>04</span></div>
+</section>
+
+<section class="s">
+  <span class="eyebrow">2 · Forecasts that survive real data</span>
+  <h2>Stock-out days are not zero demand. The model knows the difference.</h2>
+  <div class="cols">
+    <img class="shot" src="img/stock.jpg" alt="Forecast with corrected stock-out days">
+    <div class="stack">
+      <ul>
+        <li><b>Censored demand:</b> 3+ zero days at a PHC that normally dispenses an item are re-estimated. The pilot restores <b>298 stock-out days</b>.</li>
+        <li><b>Entry errors:</b> days above 4× their local median are capped (<b>27</b> caught). SMS jumps of more than 60 days of demand are held for confirmation.</li>
+        <li><b>Late reports:</b> today's stock is estimated from forecast use, and uncertainty widens with report age.</li>
+        <li><b>Forecast:</b> Holt smoothing with weekday seasonality gives a 14-day forecast, 80% band and P(stock-out) within the resupply lead time.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Aushadh Grid</span><span>05</span></div>
+</section>
+
+<section class="s">
+  <span class="eyebrow">3 · Act: transfers before procurement</span>
+  <h2>Move stock that already exists, before it runs out or expires.</h2>
+  <div class="cols">
+    <img class="shot" src="img/expiry.jpg" alt="Expiry and wastage view">
+    <div class="stack">
+      <div class="kpis">
+        <div class="card"><span>Stock-outs averted</span><div class="big ok">47</div><span>69 transfer orders, 68 km average haul</span></div>
+        <div class="card"><span>Expiring stock rescued</span><div class="big ok">53%</div><span>₹66,095 of ₹1.25 lakh projected loss</span></div>
+      </div>
+      <ul style="font-size:17px">
+        <li>Vital medicines first; donors keep their own safety stock</li>
+        <li>Cold-chain items only between working fridges, within 150 km</li>
+        <li>21 warehouse indents (14 vital, ₹39,445), flagged when a fridge must be repaired first</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Aushadh Grid · dengue scenario, synthetic pilot data</span><span>06</span></div>
+</section>
+
+<section class="s">
+  <span class="eyebrow">How the AI fits together</span>
+  <h2>From a clinic register and a pharmacist's SMS to an approved order.</h2>
+  <div class="flow">
+    <div class="card"><span class="n">Detect</span><b>Surveillance</b><span>EARS C2 on syndromic OPD counts sets outbreak multipliers per district and medicine.</span></div>
+    <div class="card"><span class="n">Clean</span><b>Data repair</b><span>Censored demand, typo capping, stale-report estimation, SMS plausibility checks.</span></div>
+    <div class="card"><span class="n">Predict</span><b>Forecast &amp; risk</b><span>Holt smoothing, stock-out probability, FEFO expiry simulation per lot.</span></div>
+    <div class="card"><span class="n">Act</span><b>Optimise</b><span>Cold-chain-aware transfers, expiry rescue, VEN-ranked indents, referrals.</span></div>
+  </div>
+  <div class="cols eq" style="flex:0 0 auto;align-items:start">
+    <div class="card"><b>Learn together</b><span>A federated demand model is shared across BRICS health systems. Only weights cross borders.</span></div>
+    <div class="card"><b>Explain</b><span>Gemini writes a situation brief from the exact dashboard state, in Hindi, Telugu, Portuguese, Russian or Chinese. The input JSON is shown on screen.</span></div>
+  </div>
+  <div class="foot"><span>Aushadh Grid</span><span>07</span></div>
+</section>
+
+<section class="s">
+  <span class="eyebrow">BRICS cooperation · federated learning</span>
+  <h2>Countries share what the model learned, never the patient data.</h2>
+  <div class="cols">
+    <img class="shot" src="img/federated.jpg" alt="Federated learning view">
+    <div class="stack">
+      <p style="font-size:18px">Each national node trains on its own PHC records. A coordinator averages the weights (FedAvg) and returns a global model.</p>
+      <table>
+        <tr><th>Node</th><th>Local data</th><th>Error change</th></tr>
+        <tr><td>South Africa</td><td>60 PHC-days</td><td><span class="pill">−31%</span></td></tr>
+        <tr><td>Egypt</td><td>45 PHC-days</td><td><span class="pill">−31%</span></td></tr>
+        <tr><td>India, China, Brazil, Russia</td><td>700–1,600</td><td>within ±2%</td></tr>
+      </table>
+      <p class="muted" style="font-size:17px">Small systems that have rarely seen an outbreak learn outbreak demand from their partners. 14 KB of weights are shared and 0 raw records move.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Aushadh Grid</span><span>08</span></div>
+</section>
+
+<section class="s">
+  <span class="eyebrow">Patients, staff and decision makers</span>
+  <h2>A free bed nearby, and a brief the District Health Officer can act on today.</h2>
+  <div class="cols eq">
+    <img class="shot" src="img/capacity.jpg" alt="Referral finder">
+    <img class="shot" src="img/brief.jpg" alt="AI brief">
+  </div>
+  <div class="foot"><span>Aushadh Grid</span><span>09</span></div>
+</section>
+
+<section class="s">
+  <span class="eyebrow">Built as a Digital Public Good</span>
+  <h2>Open, offline-first, and ready to plug into real systems.</h2>
+  <div class="cols eq">
+    <div class="card"><b>Prototype today</b><span>• Runs in any browser with no install or backend<br>• Open source (MIT) and multilingual<br>• 48 PHCs, 12 districts, 528 medicine lines, 36 surveillance signals, 6 federated nodes<br>• CSV import so a district can try it on its own ledger<br>• Gemini integration with offline fallback</span></div>
+    <div class="card"><b>Production path</b><span>• Cloud Run API, AlloyDB / Firestore lot ledger, BigQuery history<br>• Vertex AI forecasting and Gemini<br>• Pub/Sub webhooks for SMS, WhatsApp and IVR<br>• Flower or TensorFlow Federated for cross-border training<br>• Integrations: state drug systems (DVDMS / eAushadhi), IDSP/IHIP surveillance, ABDM facility registry</span></div>
+  </div>
+  <p><b>Impact:</b> fewer patients turned away, less medicine thrown away, outbreak stock in place days earlier, and a shared model that makes every partner's forecasts better.</p>
+  <div class="foot"><span>Aushadh Grid</span><span>10</span></div>
+</section>
+
+</body></html>

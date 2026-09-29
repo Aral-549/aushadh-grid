@@ -1,0 +1,1240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Aushadh Grid</title>
+<meta name="description" content="Federated AI platform for Primary Health Centre medicine stock, bed and staff visibility, stock-out forecasting and cross-district redistribution.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky command bar + tabbed operations console; summary tiles, then map/warnings, then detail tables */
+:root {
+  --bg: #eef3f3;
+  --surface: #ffffff;
+  --sunken: #e4ecec;
+  --ink: #0f1f24;
+  --muted: #56696e;
+  --line: #d3dfe0;
+  --accent: #0b6e69;
+  --accent-ink: #ffffff;
+  --crit: #c62828;
+  --warn: #a86a12;
+  --ok: #2f7d52;
+  --surplus: #2b62a8;
+  --crit-bg: #fbe6e6;
+  --warn-bg: #fbf0dc;
+  --ok-bg: #e2f2e8;
+  --surplus-bg: #e2ecf8;
+  --font-display: "Familjen Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1417; --surface: #111e22; --sunken: #0e191c; --ink: #e2eded; --muted: #8fa4a8; --line: #22363b;
+    --accent: #40b8ad; --accent-ink: #062321;
+    --crit: #f06a6a; --warn: #e2a948; --ok: #5cc28d; --surplus: #6ea8ea;
+    --crit-bg: #3a1a1c; --warn-bg: #3a2c14; --ok-bg: #143023; --surplus-bg: #16283f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1417; --surface: #111e22; --sunken: #0e191c; --ink: #e2eded; --muted: #8fa4a8; --line: #22363b;
+  --accent: #40b8ad; --accent-ink: #062321;
+  --crit: #f06a6a; --warn: #e2a948; --ok: #5cc28d; --surplus: #6ea8ea;
+  --crit-bg: #3a1a1c; --warn-bg: #3a2c14; --ok-bg: #143023; --surplus-bg: #16283f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.5; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: 1.15rem; }
+h3 { font-size: 0.98rem; }
+p { margin: 0; }
+.num, td.n, .mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+button, select, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); border-bottom: 1px solid var(--line); }
+.bar-in { max-width: 1320px; margin: 0 auto; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+.mark { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; }
+.mark svg { display: block; }
+.brand h1 { font-size: 1.25rem; }
+.brand small { display: block; color: var(--muted); font-size: 0.75rem; line-height: 1.2; }
+.ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--muted); min-width: 0; }
+.ctl select { min-width: 0; max-width: 100%; }
+select, input[type="text"], input[type="password"], textarea { background: var(--sunken); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; color: var(--ink); max-width: 100%; }
+.tabs { max-width: 1320px; margin: 0 auto; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tab { border: 0; background: none; padding: 10px 12px; border-bottom: 2px solid transparent; color: var(--muted); cursor: pointer; white-space: nowrap; font-weight: 500; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab:hover { color: var(--ink); }
+
+main { max-width: 1320px; margin: 0 auto; padding-block: 20px 48px; padding-inline: 16px; }
+section.view { display: grid; gap: 16px; }
+.scenario-note { padding: 10px 14px; border-radius: var(--r); background: var(--warn-bg); color: var(--ink); border: 1px solid var(--line); font-size: 0.85rem; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: grid; gap: 2px; }
+.tile .k { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.tile .v { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.tile .s { font-size: 0.78rem; color: var(--muted); }
+.tile.crit .v { color: var(--crit); } .tile.warn .v { color: var(--warn); } .tile.good .v { color: var(--ok); }
+
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; }
+.grid2.even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 900px) { .grid2, .grid2.even { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.panel-h { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 12px; }
+.panel-h p, .hint { color: var(--muted); font-size: 0.8rem; }
+.chart-box { position: relative; height: 260px; }
+.chart-box.tall { height: 320px; }
+
+.map svg { width: 100%; height: auto; display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.75rem; color: var(--muted); }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; max-height: 520px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+th, td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--sunken); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); z-index: 1; }
+td.n, th.n { text-align: right; }
+tbody tr { cursor: default; }
+tbody tr.clickable { cursor: pointer; }
+tbody tr.clickable:hover, tbody tr.sel { background: var(--sunken); }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em; }
+.pill.crit { background: var(--crit-bg); color: var(--crit); }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.surplus { background: var(--surplus-bg); color: var(--surplus); }
+.meter { display: inline-block; width: 70px; height: 6px; border-radius: 3px; background: var(--sunken); vertical-align: middle; overflow: hidden; margin-right: 6px; }
+.meter b { display: block; height: 100%; background: var(--accent); }
+
+.warn-list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.warn-list li { display: grid; grid-template-columns: 4px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); }
+.warn-list li:last-child { border-bottom: 0; }
+.warn-list .stripe { align-self: stretch; border-radius: 2px; background: var(--crit); }
+.warn-list .stripe.warn { background: var(--warn); }
+.warn-list .t { font-weight: 600; }
+.warn-list .d { color: var(--muted); font-size: 0.78rem; }
+
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 14px; cursor: pointer; font-weight: 500; }
+.btn:hover { background: var(--sunken); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+textarea { width: 100%; min-height: 96px; font-family: var(--font-data); font-size: 0.8rem; resize: vertical; }
+.log { font-family: var(--font-data); font-size: 0.78rem; color: var(--muted); white-space: pre-wrap; }
+.brief { background: var(--sunken); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; white-space: pre-wrap; line-height: 1.6; max-width: 80ch; min-height: 120px; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 0.82rem; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; }
+.fed-nodes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.node { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px; background: var(--sunken); }
+.node b { font-family: var(--font-display); }
+.node span { font-size: 0.76rem; color: var(--muted); }
+.foot { color: var(--muted); font-size: 0.75rem; max-width: 90ch; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; z-index: 50; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+.pill.info { background: var(--surplus-bg); color: var(--surplus); }
+.pill.muted { background: var(--sunken); color: var(--muted); }
+.tag { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 600; background: var(--sunken); color: var(--muted); vertical-align: 1px; }
+.tag.warn { background: var(--warn-bg); color: var(--warn); }
+.tag.crit { background: var(--crit-bg); color: var(--crit); }
+.tag.info { background: var(--surplus-bg); color: var(--surplus); }
+.signal { display: grid; grid-template-columns: 4px minmax(0, 1fr) auto; gap: 12px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px 12px 0; }
+.signal .stripe { align-self: stretch; background: var(--crit); border-radius: 0 2px 2px 0; }
+.signal b { font-family: var(--font-display); font-size: 1rem; }
+.signal p { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+@media (max-width: 640px) { .signal { grid-template-columns: 4px minmax(0, 1fr); } .signal .btn { grid-column: 2; justify-self: start; } }
+.file-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.8rem; }
+.sub { color: var(--muted); font-size: 0.75rem; }
+</style>
+
+<div class="bar">
+  <div class="bar-in">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 18 18"><rect x="7" y="2" width="4" height="14" rx="1" fill="var(--accent-ink)"/><rect x="2" y="7" width="14" height="4" rx="1" fill="var(--accent-ink)"/></svg></div>
+      <div><h1>Aushadh Grid</h1><small>PHC supply-chain intelligence · Andhra Pradesh pilot (synthetic data)</small></div>
+    </div>
+    <label class="ctl" for="scenario">Demand scenario
+      <select id="scenario">
+        <option value="normal">Normal operations</option>
+        <option value="dengue">Dengue / febrile outbreak</option>
+        <option value="diarrhoea">Acute diarrhoeal outbreak</option>
+        <option value="heat">Heatwave</option>
+      </select>
+    </label>
+    <label class="ctl" for="district">District
+      <select id="district"><option value="all">All 12 districts</option></select>
+    </label>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button class="tab" role="tab" data-view="overview" aria-selected="true">Overview</button>
+    <button class="tab" role="tab" data-view="surveillance" aria-selected="false">Outbreak signals</button>
+    <button class="tab" role="tab" data-view="stock" aria-selected="false">Stock &amp; forecast</button>
+    <button class="tab" role="tab" data-view="expiry" aria-selected="false">Expiry &amp; wastage</button>
+    <button class="tab" role="tab" data-view="redistribute" aria-selected="false">Transfers &amp; indents</button>
+    <button class="tab" role="tab" data-view="capacity" aria-selected="false">Beds, staff &amp; referral</button>
+    <button class="tab" role="tab" data-view="quality" aria-selected="false">Data quality</button>
+    <button class="tab" role="tab" data-view="federated" aria-selected="false">BRICS federated model</button>
+    <button class="tab" role="tab" data-view="brief" aria-selected="false">AI situation brief</button>
+  </nav>
+</div>
+
+<main>
+  <!-- OVERVIEW -->
+  <section class="view" id="v-overview">
+    <div id="signal-slot"></div>
+    <div class="scenario-note" id="scenario-note" hidden></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="grid2">
+      <div class="panel map">
+        <div class="panel-h"><h2>PHC network risk map</h2><p>Each dot is a Primary Health Centre. Lines show recommended transfers.</p></div>
+        <div id="map"></div>
+        <div class="legend"><span><i style="background:var(--crit)"></i>2+ medicines will run out</span><span><i style="background:var(--warn)"></i>1 medicine at risk</span><span><i style="background:var(--ok)"></i>Healthy</span><span><i style="background:transparent;border:1.5px dashed var(--muted)"></i>Report overdue</span></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h2>Early warnings</h2><p>Vital medicines first, then by stock-out probability</p></div>
+        <ul class="warn-list" id="warnings"></ul>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <div class="panel-h"><h2>District risk</h2><p>Medicine lines at critical or warning level</p></div>
+        <div class="chart-box"><canvas id="c-district"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h2>Field report intake</h2><p>SMS / WhatsApp / IVR transcripts from PHC pharmacists</p></div>
+        <textarea id="sms" spellcheck="false" aria-label="Field reports">PHC-004 STOCK ORS 40 PCM 900
+PHC-017 STOCK IVF 3 ZNC 20 BEDS 18/20
+PHC-031 STOCK INS 2 ARV 0
+PHC-029 STOCK ORS 2640</textarea>
+        <div class="row"><button class="btn primary" id="ingest">Ingest reports</button><span class="hint">Format: PHC-ID STOCK CODE QTY … BEDS used/total. Implausible jumps are held for confirmation.</span></div>
+        <div class="log" id="ingest-log"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SURVEILLANCE -->
+  <section class="view" id="v-surveillance" hidden>
+    <div class="tiles" id="sv-tiles"></div>
+    <div class="panel">
+      <div class="panel-h"><h2>Syndromic OPD surveillance</h2><p>Daily outpatient cases by syndrome, all PHCs in the district</p></div>
+      <p class="hint">Detection uses the CDC EARS C2 method: today's count is compared with the mean and spread of a 7-day baseline that ends 2 days earlier, so a slow rise cannot hide itself. Three standard deviations above baseline on 2 of the last 3 days raises an alert. An alert can switch the demand forecast into outbreak mode for exactly the districts affected, days before an outbreak is officially declared.</p>
+      <div class="grid2">
+        <div class="tbl-wrap"><table><thead><tr><th>District</th><th>Syndrome</th><th class="n">Today</th><th class="n">Baseline</th><th class="n">Ratio</th><th class="n">C2 score</th><th class="n">Days</th><th>Status</th></tr></thead><tbody id="sv-body"></tbody></table></div>
+        <div class="panel" style="border:0;padding:0">
+          <h3 id="sv-title">Signal</h3>
+          <div class="chart-box tall"><canvas id="c-surv"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STOCK -->
+  <section class="view" id="v-stock" hidden>
+    <div class="panel">
+      <div class="panel-h">
+        <h2>Medicine stock and demand forecast</h2>
+        <div class="row">
+          <label class="ctl" for="med-filter">Medicine <select id="med-filter"><option value="all">All medicines</option></select></label>
+          <label class="ctl" for="status-filter">Status <select id="status-filter"><option value="all">All</option><option value="crit">Critical</option><option value="warn">Warning</option><option value="ok">Healthy</option><option value="surplus">Surplus</option></select></label>
+        </div>
+      </div>
+      <p class="hint">Forecast: Holt linear smoothing on day-of-week adjusted consumption (120 days). Before fitting, days when the PHC had run out are replaced with estimated true demand (a stock-out records zero use, which would teach the model that demand is low), and data-entry spikes are capped. Where a PHC's report is overdue, today's stock is estimated from forecast use since the last report and the uncertainty is widened.</p>
+      <h3 id="detail-title">Forecast</h3>
+      <div class="grid2">
+        <div class="chart-box tall"><canvas id="c-forecast"></canvas></div>
+        <dl class="kv" id="detail-kv" style="align-content:start"></dl>
+      </div>
+      <p class="hint">Select a row to see its forecast.</p>
+      <div class="tbl-wrap" style="max-height:440px"><table><thead><tr><th>PHC</th><th>Medicine</th><th class="n">Stock</th><th class="n">Daily forecast</th><th class="n">Days cover / lead</th><th class="n">P(stock-out)</th><th>Status</th></tr></thead><tbody id="stock-body"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- EXPIRY -->
+  <section class="view" id="v-expiry" hidden>
+    <div class="tiles" id="ex-tiles"></div>
+    <div class="panel">
+        <div class="panel-h"><h2>Batches that will expire before use</h2><p>First-expiry-first-out simulation against each PHC's own forecast</p></div>
+        <div class="tbl-wrap" style="max-height:420px"><table><thead><tr><th>PHC</th><th>Medicine</th><th>Lot</th><th>Expires</th><th class="n">In lot</th><th class="n">Used in time</th><th class="n">Will expire</th><th class="n">Value</th><th>Action</th></tr></thead><tbody id="ex-body"></tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h2>Projected loss by medicine</h2><p>₹ value, and how much transfers recover</p></div>
+      <p class="hint">A lot that a quiet PHC cannot use before its expiry date is sent to a busier PHC that will use it in time. That PHC then draws on this stock first, and its own later-expiring stock lasts longer.</p>
+      <div class="chart-box"><canvas id="c-expiry"></canvas></div>
+    </div>
+  </section>
+
+  <!-- REDISTRIBUTE -->
+  <section class="view" id="v-redistribute" hidden>
+    <div class="tiles" id="rd-tiles"></div>
+    <div class="panel">
+      <div class="panel-h">
+        <h2>Recommended cross-PHC transfers</h2>
+        <div class="row"><button class="btn" id="copy-csv">Copy orders as CSV</button><button class="btn primary" id="approve-all">Approve all transfers</button></div>
+      </div>
+      <p class="hint">Two kinds of transfer. <b>Prevent stock-out</b> moves surplus to PHCs that would run out before resupply. Vital medicines are served first, nearest donor first, and donors with expiring stock are preferred. <b>Rescue expiring stock</b> moves lots that would expire unused to PHCs that will use them in time. Cold-chain items (2–8 °C) move only between PHCs with a working ice-lined refrigerator, within 150 km.</p>
+      <div class="tbl-wrap"><table><thead><tr><th>Type</th><th>Medicine</th><th>From (donor)</th><th>To (receiver)</th><th class="n">Qty</th><th class="n">Distance</th><th class="n">ETA</th><th>Impact</th><th>Status</th></tr></thead><tbody id="rd-body"></tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h2>State warehouse indents</h2><p>Need no nearby PHC can cover, Vital first (WHO VEN priority)</p></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Priority</th><th>Medicine</th><th>PHC</th><th>District</th><th class="n">Qty to indent</th><th class="n">Cost</th><th>Note</th></tr></thead><tbody id="indent-body"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- CAPACITY -->
+  <section class="view" id="v-capacity" hidden>
+    <div class="tiles" id="cap-tiles"></div>
+    <div class="grid2 even">
+      <div class="panel"><div class="panel-h"><h2>Bed occupancy by district</h2><p>Occupied / total, today</p></div><div class="chart-box"><canvas id="c-beds"></canvas></div></div>
+      <div class="panel"><div class="panel-h"><h2>Staff attendance, last 14 days</h2><p>Share of sanctioned staff marked present</p></div><div class="chart-box"><canvas id="c-staff"></canvas></div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h2>Referral finder</h2><p>Nearest PHCs with a free bed and a medical officer on duty today</p></div>
+      <label class="ctl" for="ref-from">Patient is at <select id="ref-from"></select></label>
+      <div class="tbl-wrap"><table><thead><tr><th>Refer to</th><th>District</th><th class="n">Distance</th><th class="n">Travel</th><th class="n">Free beds</th><th>Medical officer</th><th>Stock of vital medicines</th></tr></thead><tbody id="ref-body"></tbody></table></div>
+    </div>
+    <div class="panel">
+      <h2>PHC capacity register</h2>
+      <div class="tbl-wrap"><table><thead><tr><th>PHC</th><th>District</th><th>Beds</th><th class="n">Occupied</th><th class="n">Medical officer</th><th class="n">Nurses present</th><th class="n">Attendance 7d</th><th>Cold chain</th><th>Flag</th></tr></thead><tbody id="cap-body"></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- DATA QUALITY -->
+  <section class="view" id="v-quality" hidden>
+    <div class="tiles" id="dq-tiles"></div>
+    <div class="grid2 even">
+      <div class="panel">
+        <div class="panel-h"><h2>Overdue stock reports</h2><p>Today's stock is estimated until the PHC reports</p></div>
+        <div class="tbl-wrap"><table><thead><tr><th>PHC</th><th>District</th><th class="n">Last report</th><th class="n">Critical</th><th>Action</th></tr></thead><tbody id="dq-stale"></tbody></table></div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h2>Automatic history corrections</h2><p>Applied before the forecast model is fitted</p></div>
+        <div class="tbl-wrap"><table><thead><tr><th>PHC</th><th>Medicine</th><th>Issue</th><th>When</th><th class="n">Recorded → model</th></tr></thead><tbody id="dq-fix"></tbody></table></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h2>Bring your own data</h2><p>Load a real stock ledger, or export the current one</p></div>
+      <p class="hint">CSV columns: <span class="mono">phc_id,medicine_code,stock</span>, with optional <span class="mono">expiry_days</span> (days until the lot expires). Medicine codes: <span class="mono" id="codes"></span>. Rows replace the stock on hand and mark the PHC as reported today.</p>
+      <div class="file-row"><label class="btn" for="csv-file">Choose CSV file</label><input type="file" id="csv-file" accept=".csv,text/csv" hidden><span class="sub">or paste below</span></div>
+      <textarea id="csv-text" spellcheck="false" aria-label="CSV stock ledger">phc_id,medicine_code,stock,expiry_days
+PHC-001,ORS,850,210
+PHC-002,IVF,12,
+PHC-040,INS,30,45</textarea>
+      <div class="row"><button class="btn primary" id="csv-import">Import ledger</button><button class="btn" id="csv-copy">Copy current ledger</button><button class="btn" id="csv-download">Download current ledger</button></div>
+      <div class="log" id="csv-log"></div>
+    </div>
+  </section>
+
+  <!-- FEDERATED -->
+  <section class="view" id="v-federated" hidden>
+    <div class="panel">
+      <div class="panel-h"><h2>Shared demand model across BRICS health systems</h2><div class="row"><label class="ctl" for="rounds">Rounds <select id="rounds"><option>10</option><option selected>25</option><option>50</option></select></label><button class="btn primary" id="run-fed">Run federated training</button></div></div>
+      <p class="hint">Each national node trains the demand model on its own PHC data. Only model weights leave the country; patient and facility records stay local. The coordinator averages weights by sample count (FedAvg) and sends the global model back. Nodes with little data, and little outbreak history, gain the most.</p>
+      <div class="fed-nodes" id="fed-nodes"></div>
+    </div>
+    <div class="grid2 even">
+      <div class="panel"><div class="panel-h"><h2>Test error per training round</h2><p>Mean absolute error, units/day, averaged over nodes</p></div><div class="chart-box"><canvas id="c-fed"></canvas></div></div>
+      <div class="panel"><div class="panel-h"><h2>Local-only vs federated</h2><p>Held-out error per national node</p></div><div class="chart-box"><canvas id="c-fed-bar"></canvas></div></div>
+    </div>
+    <p class="foot" id="fed-foot"></p>
+  </section>
+
+  <!-- BRIEF -->
+  <section class="view" id="v-brief" hidden>
+    <div class="grid2">
+      <div class="panel">
+        <div class="panel-h"><h2>Situation brief for the District Health Officer</h2></div>
+        <div class="row">
+          <label class="ctl" for="lang">Language <select id="lang"><option value="en">English</option><option value="hi">हिन्दी (Hindi)</option><option value="te">తెలుగు (Telugu)</option><option value="pt">Português</option><option value="ru">Русский</option><option value="zh">中文</option></select></label>
+          <button class="btn primary" id="gen-brief">Generate brief</button>
+          <button class="btn" id="copy-brief">Copy</button>
+        </div>
+        <div class="brief" id="brief-out" aria-live="polite"></div>
+        <p class="hint" id="brief-src"></p>
+      </div>
+      <div class="panel">
+        <h2>Gemini connection</h2>
+        <p class="hint">With a Gemini API key the brief is written by Gemini from the live dashboard data, in any language. Without one, a built-in template writes it in English, Hindi or Portuguese. The key stays in this browser.</p>
+        <label class="ctl" for="gkey" style="display:grid;gap:4px">API key<input type="password" id="gkey" placeholder="AIza…" autocomplete="off"></label>
+        <label class="ctl" for="gmodel" style="display:grid;gap:4px">Model<input type="text" id="gmodel" value="gemini-2.5-flash"></label>
+        <h3>Data sent to the model</h3>
+        <pre class="log" id="brief-ctx" style="max-height:260px;overflow:auto;margin:0"></pre>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script src="vendor/chart.umd.min.js"></script>
+<script>window.Chart || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>')</script>
+<script>
+(() => {
+"use strict";
+// ================= deterministic synthetic data =================
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rnd = mulberry32(20260928);
+const gaussOf = r => () => { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const gauss = gaussOf(rnd);
+
+const DISTRICTS = [
+  { id: "SKL", name: "Srikakulam", lat: 18.30, lon: 83.90, region: "north" },
+  { id: "VZM", name: "Vizianagaram", lat: 18.11, lon: 83.40, region: "north" },
+  { id: "VSP", name: "Visakhapatnam", lat: 17.69, lon: 83.10, region: "north" },
+  { id: "EG", name: "East Godavari", lat: 17.00, lon: 82.10, region: "delta" },
+  { id: "WG", name: "West Godavari", lat: 16.71, lon: 81.20, region: "delta" },
+  { id: "KRS", name: "Krishna", lat: 16.40, lon: 80.75, region: "delta" },
+  { id: "GNT", name: "Guntur", lat: 16.15, lon: 80.30, region: "south" },
+  { id: "PKM", name: "Prakasam", lat: 15.50, lon: 79.70, region: "south" },
+  { id: "NLR", name: "Nellore", lat: 14.44, lon: 79.75, region: "south" },
+  { id: "KNL", name: "Kurnool", lat: 15.75, lon: 78.10, region: "rayalaseema" },
+  { id: "ATP", name: "Anantapur", lat: 14.60, lon: 77.60, region: "rayalaseema" },
+  { id: "CTR", name: "Chittoor", lat: 13.40, lon: 79.00, region: "rayalaseema" },
+];
+// ven: WHO Vital / Essential / Non-essential class; price: ₹ per unit (approximate state tender rates); shelf: shelf life in days
+const MEDS = [
+  { id: "PCM", name: "Paracetamol 500 mg", unit: "tab", base: 60, lead: 7, ven: "E", cold: false, price: 0.25, shelf: 720, sens: { dengue: 3.2, heat: 1.4 } },
+  { id: "ORS", name: "ORS sachet", unit: "sachet", base: 22, lead: 7, ven: "V", cold: false, price: 2.6, shelf: 540, sens: { diarrhoea: 4.2, heat: 3.2, dengue: 2.0 } },
+  { id: "AMX", name: "Amoxicillin 250 mg", unit: "cap", base: 30, lead: 10, ven: "E", cold: false, price: 1.3, shelf: 540, sens: { diarrhoea: 1.4 } },
+  { id: "MET", name: "Metformin 500 mg", unit: "tab", base: 40, lead: 14, ven: "E", cold: false, price: 0.45, shelf: 720, sens: {} },
+  { id: "IFA", name: "Iron-folic acid", unit: "tab", base: 45, lead: 14, ven: "N", cold: false, price: 0.12, shelf: 540, sens: {} },
+  { id: "ZNC", name: "Zinc 20 mg", unit: "tab", base: 10, lead: 10, ven: "V", cold: false, price: 0.9, shelf: 720, sens: { diarrhoea: 3.8 } },
+  { id: "ACT", name: "Artemether-lumefantrine", unit: "course", base: 2.5, lead: 14, ven: "V", cold: false, price: 28, shelf: 540, sens: { dengue: 1.6 } },
+  { id: "INS", name: "Insulin (human, 10 ml)", unit: "vial", base: 1.2, lead: 10, ven: "V", cold: true, price: 165, shelf: 300, sens: {} },
+  { id: "ARV", name: "Anti-rabies vaccine", unit: "vial", base: 2, lead: 12, ven: "V", cold: true, price: 320, shelf: 540, sens: {} },
+  { id: "OXY", name: "Oxytocin 5 IU inj", unit: "amp", base: 1.5, lead: 10, ven: "V", cold: true, price: 14, shelf: 360, sens: {} },
+  { id: "IVF", name: "Ringer lactate 500 ml", unit: "bottle", base: 6, lead: 7, ven: "V", cold: false, price: 24, shelf: 720, sens: { dengue: 3.8, diarrhoea: 3.0, heat: 2.6 } },
+];
+const VEN_RANK = { V: 0, E: 1, N: 2 }, VEN_NAME = { V: "Vital", E: "Essential", N: "Non-essential" };
+const SCENARIOS = {
+  normal: { name: "Normal operations", regions: [], syndrome: null },
+  dengue: { name: "Dengue / febrile outbreak", regions: ["north"], syndrome: "fever", effect: "Paracetamol, IV fluid and ORS demand" },
+  diarrhoea: { name: "Acute diarrhoeal outbreak", regions: ["delta"], syndrome: "add", effect: "ORS, zinc and IV fluid demand" },
+  heat: { name: "Heatwave", regions: ["rayalaseema"], syndrome: "heat", effect: "ORS and IV fluid demand" },
+};
+const HIST = 120, H = 14, EXT = 60;
+const DOW = [1.12, 1.05, 1.0, 1.0, 0.98, 0.95, 0.72];
+const DOW_MEAN = DOW.reduce((a, v) => a + v, 0) / 7;
+
+const PHCS = [];
+let seq = 1;
+DISTRICTS.forEach(d => {
+  for (let i = 0; i < 4; i++) {
+    const id = "PHC-" + String(seq++).padStart(3, "0");
+    const size = 0.6 + rnd() * 1.0;
+    const phc = { id, district: d.id, name: `${d.name} ${i + 1}`, lat: d.lat + (rnd() - 0.5) * 0.7, lon: d.lon + (rnd() - 0.5) * 0.8, size, beds: 6 + Math.round(rnd() * 24), stock: {}, hist: {} };
+    phc.occupied = Math.round(phc.beds * (0.35 + rnd() * 0.6));
+    phc.nurses = 3 + Math.round(rnd() * 4);
+    phc.attendance = [];
+    const reliab = 0.72 + rnd() * 0.25;
+    for (let t = 0; t < 14; t++) phc.attendance.push(Math.max(0.3, Math.min(1, reliab + gauss() * 0.07)));
+    phc.moPresent = rnd() < reliab + 0.05;
+    phc.nursesPresent = Math.round(phc.nurses * phc.attendance[13]);
+    MEDS.forEach(m => {
+      const trend = (rnd() - 0.4) * 0.3;
+      const h = [];
+      for (let t = 0; t < HIST; t++) {
+        const mu = m.base * size * DOW[t % 7] * (1 + trend * t / HIST) * Math.exp(gauss() * 0.22);
+        h.push(Math.max(0, mu >= 3 ? Math.round(mu) : Math.round(mu * 10) / 10));
+      }
+      phc.hist[m.id] = h;
+      const r = rnd();
+      const cover = r < 0.06 ? 1 + rnd() * 5 : r < 0.14 ? 6 + rnd() * 9 : r < 0.76 ? 17 + rnd() * 24 : 46 + rnd() * 45;
+      phc.stock[m.id] = Math.round(m.base * size * cover);
+    });
+    PHCS.push(phc);
+  }
+});
+
+// Real-world messiness, from its own random stream: late reports, broken fridges, past stock-outs, typos, batches with expiry dates.
+const rnd2 = mulberry32(4242);
+function makeBatches(total, m, r) {
+  const nb = total > 0 ? 1 + Math.floor(r() * 3) : 0, out = [];
+  let left = total;
+  for (let i = 0; i < nb; i++) {
+    const q = i === nb - 1 ? left : Math.round(left * (0.25 + r() * 0.4));
+    left -= q;
+    out.push({ lot: `${m.id}${2400 + Math.floor(r() * 900)}`, qty: q, exp: Math.round(12 + Math.pow(r(), 1.6) * m.shelf) });
+  }
+  return out.filter(b => b.qty > 0).sort((a, b) => a.exp - b.exp);
+}
+PHCS.forEach(p => {
+  const r = rnd2();
+  p.lastReport = r < 0.1 ? 3 + Math.floor(rnd2() * 6) : r < 0.35 ? 1 : 0;
+  p.ilrOk = rnd2() > 0.1;
+  p.batches = {};
+  MEDS.forEach(m => {
+    const h = p.hist[m.id];
+    if (rnd2() < 0.1 && m.base * p.size > 1.5) { // a past stock-out: consumption is recorded as zero
+      const len = 4 + Math.floor(rnd2() * 8), s = HIST - 70 + Math.floor(rnd2() * 55);
+      for (let t = s; t < Math.min(HIST - 1, s + len); t++) h[t] = 0;
+    }
+    if (rnd2() < 0.05) { const t = HIST - 90 + Math.floor(rnd2() * 85); h[t] = Math.round(h[t] * (8 + rnd2() * 5)); } // entry error, e.g. an extra zero
+    p.batches[m.id] = makeBatches(p.stock[m.id], m, rnd2);
+  });
+});
+const PHC_BY_ID = Object.fromEntries(PHCS.map(p => [p.id, p]));
+const DIST_BY_ID = Object.fromEntries(DISTRICTS.map(d => [d.id, d]));
+const MED_BY_ID = Object.fromEntries(MEDS.map(m => [m.id, m]));
+
+// ================= syndromic surveillance =================
+const SYNDROMES = [
+  { id: "fever", name: "Acute febrile illness", scenario: "dengue" },
+  { id: "add", name: "Acute diarrhoeal disease", scenario: "diarrhoea" },
+  { id: "heat", name: "Heat-related illness", scenario: "heat" },
+];
+const SYN_BY_ID = Object.fromEntries(SYNDROMES.map(s => [s.id, s]));
+const SV_DAYS = 60;
+const rs = mulberry32(777), gs = gaussOf(rs);
+const SURV = {};
+DISTRICTS.forEach(d => {
+  SURV[d.id] = {};
+  SYNDROMES.forEach(s => {
+    const base = s.id === "fever" ? 30 + rs() * 30 : s.id === "add" ? 15 + rs() * 20 : 4 + rs() * 5;
+    const a = [];
+    for (let t = 0; t < SV_DAYS; t++) { const mu = base * DOW[t % 7] * (1 + 0.08 * Math.sin(t / 9)); a.push(Math.max(0, Math.round(mu + Math.sqrt(mu) * gs()))); }
+    SURV[d.id][s.id] = a;
+  });
+});
+// What is happening on the ground: fever rising on the north coast, diarrhoea just starting in East Godavari.
+const inject = (d, s, mults) => { const a = SURV[d][s]; mults.forEach((mu, i) => { const t = SV_DAYS - mults.length + i; a[t] = Math.round(a[t] * mu); }); };
+inject("SKL", "fever", [1.3, 1.6, 2.0, 2.5, 2.9, 3.2]);
+inject("VZM", "fever", [1.2, 1.5, 1.9, 2.3, 2.6]);
+inject("VSP", "fever", [1.15, 1.35, 1.6]);
+inject("EG", "add", [1.35, 1.7]);
+const mean = a => a.reduce((x, v) => x + v, 0) / (a.length || 1);
+const sdev = a => { const m = mean(a); return Math.sqrt(a.reduce((x, v) => x + (v - m) ** 2, 0) / Math.max(1, a.length - 1)); };
+// CDC EARS C2: 7-day baseline with a 2-day guard band
+function c2(a, t) { const b = a.slice(t - 9, t - 2), m = mean(b); return (a[t] - m) / Math.max(1, sdev(b), Math.sqrt(m)); }
+const SIGNALS = [];
+DISTRICTS.forEach(d => SYNDROMES.forEach(s => {
+  const a = SURV[d.id][s.id], n = a.length;
+  const z = a.map((_, t) => t >= 9 ? c2(a, t) : null);
+  let over = 0; for (let t = n - 1; t >= 9 && z[t] > 3; t--) over++;
+  const last3 = [z[n - 3], z[n - 2], z[n - 1]].filter(v => v > 3).length;
+  const baseline = mean(a.slice(n - 37, n - 9));
+  const status = z[n - 1] > 3 && last3 >= 2 ? "alert" : z[n - 1] > 2.5 && a[n - 1] > 1.3 * baseline ? "watch" : "normal";
+  SIGNALS.push({ d, s, a, z, over, status, today: a[n - 1], baseline, ratio: a[n - 1] / baseline });
+}));
+
+// ================= forecasting =================
+// Clean the consumption history before fitting:
+//  - censored demand: 3+ consecutive zero days while the PHC normally dispenses the item = it had run out, not zero demand
+//  - entry errors: a day above 4x its local median is capped at that median
+function cleanSeries(y) {
+  const x = y.slice(), n = x.length, censored = [], outliers = [];
+  const median = arr => { const s = arr.slice().sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : 0; };
+  for (let t = 0; t < n; t++) {
+    const win = y.slice(Math.max(0, t - 7), t).concat(y.slice(t + 1, t + 8)).filter(v => v > 0);
+    const md = median(win);
+    if (md > 0.5 && y[t] > 4 * md) { outliers.push({ t, v: y[t], fixed: md }); x[t] = md; }
+  }
+  let t = 0;
+  while (t < n) {
+    if (x[t] !== 0) { t++; continue; }
+    const s = t; while (t < n && x[t] === 0) t++;
+    if (t - s < 3) continue;
+    const around = x.slice(Math.max(0, s - 14), s).concat(x.slice(t, t + 14)).filter(v => v > 0);
+    const level = mean(around) / DOW_MEAN;
+    if (level > 1) for (let k = s; k < t; k++) { x[k] = level * DOW[k % 7]; censored.push({ t: k, fixed: x[k] }); }
+  }
+  return { x, censored, outliers };
+}
+function baseForecast(raw) {
+  const cl = cleanSeries(raw), y = cl.x;
+  const n = y.length, win = 56;
+  const f = [0, 0, 0, 0, 0, 0, 0], c = [0, 0, 0, 0, 0, 0, 0];
+  let tot = 0;
+  for (let t = n - win; t < n; t++) { f[t % 7] += y[t]; c[t % 7]++; tot += y[t]; }
+  const mu = tot / win || 1e-6;
+  const s = f.map((v, i) => (v / c[i]) / mu || 1);
+  const alpha = 0.3, beta = 0.08;
+  let L = y[0] / s[0], T = 0, sse = 0, cnt = 0;
+  for (let t = 1; t < n; t++) {
+    const xv = y[t] / s[t % 7];
+    const pred = L + T;
+    if (t > 14) { sse += (xv - pred) ** 2; cnt++; }
+    const Ln = alpha * xv + (1 - alpha) * (L + T);
+    T = beta * (Ln - L) + (1 - beta) * T;
+    L = Ln;
+  }
+  const sd = Math.sqrt(sse / Math.max(1, cnt));
+  const out = [];
+  for (let k = 1; k <= EXT; k++) out.push(Math.max(0, (L + Math.min(k, 21) * T) * s[(n + k - 1) % 7]));
+  // what a naive model would have forecast from the raw, uncorrected history
+  const naive = mean(raw.slice(-28));
+  return { f: out, sd, level: L, clean: cl, naive };
+}
+const BASE = {};
+PHCS.forEach(p => { BASE[p.id] = {}; MEDS.forEach(m => { BASE[p.id][m.id] = baseForecast(p.hist[m.id]); }); });
+
+const normCdf = z => { const t = 1 / (1 + 0.2316419 * Math.abs(z)); const d = 0.3989423 * Math.exp(-z * z / 2); const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274)))); return z > 0 ? 1 - p : p; };
+
+let scenario = "normal", scenarioSource = "manual";
+let activeDistricts = new Set();
+function setScenario(id, districts, source) {
+  scenario = id; scenarioSource = source || "manual";
+  activeDistricts = new Set(districts || DISTRICTS.filter(d => SCENARIOS[id].regions.includes(d.region)).map(d => d.id));
+  $("#scenario").value = id;
+}
+function multiplier(p, m, k) {
+  if (!activeDistricts.has(p.district)) return 1;
+  const s = m.sens[scenario] || 1;
+  return 1 + (s - 1) * Math.min(1, (k + 1) / 3);
+}
+// remove `qty` from the earliest-expiring lots (first-expiry-first-out)
+function drawFefo(batches, qty) {
+  const out = batches.map(b => ({ ...b }));
+  for (const b of out) { if (qty <= 0) break; const u = Math.min(b.qty, qty); b.qty -= u; qty -= u; }
+  return out.filter(b => b.qty > 0);
+}
+function evaluate(p, m) {
+  const b = BASE[p.id][m.id];
+  const f = b.f.map((v, k) => v * multiplier(p, m, k));
+  const reported = p.stock[m.id], age = p.lastReport;
+  let drawn = 0; for (let k = 0; k < age; k++) drawn += b.level * DOW[(HIST - age + k) % 7];
+  const stock = Math.max(0, Math.round(reported - drawn));
+  const C = [0]; for (let k = 0; k < EXT; k++) C.push(C[k] + f[k]);
+  const tail = mean(f.slice(EXT - 14));
+  const cum = t => t <= 0 ? 0 : t <= EXT ? C[Math.floor(t)] + (t % 1) * (f[Math.floor(t)] || tail) : C[EXT] + (t - EXT) * tail;
+  let cover = EXT;
+  for (let k = 0; k < EXT; k++) if (C[k + 1] > stock) { cover = k + (stock - C[k]) / f[k]; break; }
+  const dL = C[m.lead];
+  let sdL = Math.max(0.5, b.sd * Math.sqrt(m.lead) * (dL / m.lead) / Math.max(1e-6, b.level) || 0.5);
+  sdL *= Math.sqrt(1 + age / m.lead); // older report, wider uncertainty
+  const pOut = Math.min(1, Math.max(0, 1 - normCdf((stock - dL) / sdL)));
+  const daily = C[H] / H;
+  let status = "ok";
+  if (cover < m.lead) status = "crit"; else if (cover < m.lead + 7) status = "warn"; else if (cover > 45) status = "surplus";
+  // expiry: simulate first-expiry-first-out use against this PHC's own forecast
+  const lots = drawFefo(p.batches[m.id], reported - stock);
+  let used = 0, waste = 0, near90 = 0;
+  const batches = lots.map(bt => {
+    const use = Math.min(bt.qty, Math.max(0, cum(bt.exp) - used));
+    used += use; waste += bt.qty - use;
+    if (bt.exp <= 90) near90 += bt.qty;
+    return { ...bt, use: Math.round(use), waste: Math.round(bt.qty - use) };
+  });
+  return { p, m, f, cum, stock, reported, age, cover, pOut, daily, dL, status, batches, waste: Math.round(waste), wasteValue: waste * m.price, near90, coldFault: m.cold && !p.ilrOk };
+}
+let EVALS = [], EVAL_OF = new Map();
+function recompute() {
+  EVALS = []; EVAL_OF = new Map();
+  PHCS.forEach(p => MEDS.forEach(m => { const e = evaluate(p, m); EVALS.push(e); EVAL_OF.set(p.id + m.id, e); }));
+}
+
+// ================= redistribution =================
+function haversine(a, b) { const R = 6371, dLat = (b.lat - a.lat) * Math.PI / 180, dLon = (b.lon - a.lon) * Math.PI / 180; const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLon / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); }
+const ROAD = 1.3, SPEED = 35; // road distance ≈ 1.3 × straight line; district vehicle ≈ 35 km/h
+let TRANSFERS = [], INDENTS = [], approved = false;
+function planTransfers() {
+  TRANSFERS = []; INDENTS = [];
+  const received = new Map();
+  MEDS.forEach(m => {
+    const rows = EVALS.filter(e => e.m === m);
+    const coldOk = e => !m.cold || e.p.ilrOk;
+    const maxKm = m.cold ? 150 : 250;
+    const donors = rows.filter(coldOk).map(e => ({ e, avail: Math.floor(e.stock - (m.lead + 14) * e.daily) })).filter(d => d.avail > 0);
+    const recv = rows.filter(e => e.status === "crit").sort((a, b) => b.pOut - a.pOut || a.cover - b.cover);
+    recv.forEach(r => {
+      let need = Math.ceil((m.lead + 7) * r.daily - r.stock);
+      if (need <= 0) return;
+      if (!coldOk(r)) { INDENTS.push({ m, p: r.p, qty: need, note: "Fridge fault: repair before restocking" }); return; }
+      const opts = donors.filter(d => d.avail > 0).map(d => ({ d, km: haversine(d.e.p, r.p) * ROAD })).filter(o => o.km <= maxKm)
+        .sort((a, b) => (a.km - (a.d.e.waste > 0 ? 60 : 0)) - (b.km - (b.d.e.waste > 0 ? 60 : 0)));
+      for (const o of opts) {
+        if (need <= 0) break;
+        const q = Math.min(need, o.d.avail);
+        if (q < Math.max(1, r.daily)) continue;
+        o.d.avail -= q; need -= q;
+        received.set(r, (received.get(r) || 0) + q);
+        TRANSFERS.push({ type: "stockout", m, from: o.d.e.p, to: r.p, qty: q, km: o.km, eta: o.km / SPEED + 2, before: r.cover, recv: r, donor: o.d.e });
+      }
+      if (need > 0) INDENTS.push({ m, p: r.p, qty: need, note: "" });
+    });
+    // expiry rescue: send lots a PHC cannot use in time to a PHC that can
+    donors.filter(d => d.e.waste > 0).forEach(d => {
+      d.e.batches.filter(bt => bt.waste > 0).forEach(bt => {
+        let give = Math.min(bt.waste, d.avail);
+        if (give <= 0) return;
+        const cands = rows.filter(e => e !== d.e && coldOk(e) && e.waste === 0).map(e => {
+          const km = haversine(d.e.p, e.p) * ROAD, arrive = Math.ceil((km / SPEED + 2) / 24) + 1;
+          const own = e.batches.filter(x => x.exp < bt.exp).reduce((a, x) => a + x.qty, 0);
+          const room = Math.floor(e.cum(bt.exp - 1) - Math.max(own, e.cum(arrive)) - (received.get(e) || 0));
+          return { e, km, room };
+        }).filter(c => c.km <= maxKm && c.room > 0).sort((a, b) => a.km - b.km);
+        for (const c of cands) {
+          if (give <= 0) break;
+          const q = Math.min(give, c.room);
+          if (q < Math.max(1, c.e.daily)) continue;
+          give -= q; d.avail -= q;
+          received.set(c.e, (received.get(c.e) || 0) + q);
+          TRANSFERS.push({ type: "expiry", m, from: d.e.p, to: c.e.p, qty: q, km: c.km, eta: c.km / SPEED + 2, lot: bt, value: q * m.price, recv: c.e, donor: d.e });
+        }
+      });
+    });
+  });
+  TRANSFERS.forEach(t => { if (t.type === "stockout") t.after = coverWith(t.recv, t.recv.stock + received.get(t.recv)); });
+  TRANSFERS.sort((a, b) => (a.type === "stockout" ? 0 : 1) - (b.type === "stockout" ? 0 : 1) || VEN_RANK[a.m.ven] - VEN_RANK[b.m.ven] || (a.before ?? 0) - (b.before ?? 0) || (b.value ?? 0) - (a.value ?? 0));
+  INDENTS.forEach(i => { i.cost = i.qty * i.m.price; });
+  INDENTS.sort((a, b) => VEN_RANK[a.m.ven] - VEN_RANK[b.m.ven] || b.cost - a.cost);
+}
+function coverWith(e, stock) { let cum = 0; for (let k = 0; k < EXT; k++) { cum += e.f[k]; if (cum > stock) return k + (stock - (cum - e.f[k])) / e.f[k]; } return EXT; }
+
+// ================= helpers =================
+const $ = s => document.querySelector(s);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt = (v, d = 0) => Number(v).toLocaleString("en-IN", { maximumFractionDigits: d, minimumFractionDigits: d });
+const inr = v => v >= 1e5 ? "₹" + fmt(v / 1e5, 2) + " lakh" : "₹" + fmt(v);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const LABEL = { crit: "Critical", warn: "Warning", ok: "Healthy", surplus: "Surplus" };
+const pill = s => `<span class="pill ${s}">${LABEL[s]}</span>`;
+const venTag = m => `<span class="tag ${m.ven === "V" ? "crit" : ""}" title="${VEN_NAME[m.ven]}">${m.ven}</span>`;
+const coldTag = m => m.cold ? `<span class="tag info" title="Store at 2–8 °C">2–8 °C</span>` : "";
+const TODAY = new Date();
+const dateIn = d => new Date(TODAY.getTime() + d * 864e5).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+const ago = d => d === 0 ? "today" : d === 1 ? "yesterday" : `${d} days ago`;
+let districtFilter = "all";
+const inDistrict = p => districtFilter === "all" || p.district === districtFilter;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2600); }
+function copyText(text, okMsg) {
+  const fallback = () => { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); toast(okMsg); } catch (e) { toast("Copy blocked. Select the text manually."); } ta.remove(); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => toast(okMsg), fallback); else fallback();
+}
+const tiles = (el, list) => { $(el).innerHTML = list.map(t => `<div class="tile ${t.c || ""}"><span class="k">${t.k}</span><span class="v">${t.v}</span><span class="s">${t.s}</span></div>`).join(""); };
+const charts = {};
+function chart(id, cfg) { if (charts[id]) charts[id].destroy(); if (typeof Chart === "undefined") return; charts[id] = new Chart(document.getElementById(id), cfg); }
+function chartDefaults() {
+  if (typeof Chart === "undefined") return;
+  Chart.defaults.font.family = css("--font-body");
+  Chart.defaults.color = css("--muted");
+  Chart.defaults.borderColor = css("--line");
+  Chart.defaults.plugins.legend.labels.boxWidth = 10;
+  Chart.defaults.maintainAspectRatio = false;
+  Chart.defaults.animation.duration = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 400;
+}
+const alerts = () => SIGNALS.filter(s => s.status === "alert");
+
+// ================= overview =================
+function phcStatus(p) {
+  const c = EVALS.filter(e => e.p === p && e.status === "crit").length;
+  const w = EVALS.filter(e => e.p === p && e.status === "warn").length;
+  return c >= 2 ? "crit" : c === 1 || w >= 2 ? "warn" : "ok";
+}
+function renderSignal() {
+  const bySyn = {};
+  SIGNALS.filter(s => s.status !== "normal").forEach(s => { (bySyn[s.s.id] = bySyn[s.s.id] || []).push(s); });
+  const top = SYNDROMES.map(s => ({ s, list: bySyn[s.id] || [] })).filter(x => x.list.some(v => v.status === "alert"));
+  $("#signal-slot").innerHTML = top.map(({ s, list }) => {
+    const al = list.filter(v => v.status === "alert"), watch = list.filter(v => v.status === "watch");
+    const applied = scenario === s.scenario && scenarioSource === "surveillance";
+    const peak = al.slice().sort((a, b) => b.ratio - a.ratio)[0];
+    return `<div class="signal"><span class="stripe"></span><div><b>Outbreak signal: ${s.name.toLowerCase()} rising in ${al.map(v => v.d.name).join(", ")}</b><p>OPD cases in ${peak.d.name} are ${fmt(peak.ratio, 1)}× the 4-week baseline, above the alert threshold for ${peak.over} days${watch.length ? `. On watch: ${watch.map(v => v.d.name).join(", ")}` : ""}. ${applied ? "Outbreak demand is applied to these districts' forecasts." : "Forecasts do not yet include outbreak demand."}</p></div>${applied ? '<span class="pill ok">Applied</span>' : `<button class="btn primary" data-apply="${s.id}">Apply to forecasts</button>`}</div>`;
+  }).join("");
+  $("#signal-slot").querySelectorAll("[data-apply]").forEach(b => b.addEventListener("click", () => applySignal(b.dataset.apply)));
+}
+function applySignal(synId) {
+  const syn = SYN_BY_ID[synId];
+  // alert districts, plus watch districts within 150 km of one (the same transmission cluster)
+  const al = SIGNALS.filter(s => s.s.id === synId && s.status === "alert");
+  const ds = SIGNALS.filter(s => s.s.id === synId && (s.status === "alert" || (s.status === "watch" && al.some(a => haversine(a.d, s.d) <= 150)))).map(s => s.d.id);
+  setScenario(syn.scenario, ds, "surveillance");
+  approved = false; refresh();
+  toast(`${SCENARIOS[syn.scenario].name} demand applied to ${ds.length} districts`);
+}
+function renderOverview() {
+  renderSignal();
+  const sc = SCENARIOS[scenario];
+  const note = scenario === "normal" ? "" : `${sc.name} scenario active in ${[...activeDistricts].map(id => DIST_BY_ID[id].name).join(", ")}${scenarioSource === "surveillance" ? " (triggered by surveillance)" : ""}. ${sc.effect} is modelled to rise up to 3–4× within 3 days.`;
+  $("#scenario-note").hidden = !note; $("#scenario-note").textContent = note;
+  const ev = EVALS.filter(e => inDistrict(e.p));
+  const phcs = PHCS.filter(inDistrict);
+  const crit = ev.filter(e => e.status === "crit").length;
+  const critV = ev.filter(e => e.status === "crit" && e.m.ven === "V").length;
+  const out7 = ev.filter(e => e.cover < 7).length;
+  const beds = phcs.reduce((a, p) => a + p.beds, 0), occ = phcs.reduce((a, p) => a + p.occupied, 0);
+  const tr = TRANSFERS.filter(t => inDistrict(t.to));
+  const waste = ev.reduce((a, e) => a + e.wasteValue, 0);
+  const saved = tr.filter(t => t.type === "expiry").reduce((a, t) => a + t.value, 0);
+  const stale = phcs.filter(p => p.lastReport >= 3).length;
+  tiles("#tiles", [
+    { k: "PHCs monitored", v: phcs.length, s: `${ev.length} medicine lines tracked` },
+    { k: "Critical lines", v: crit, s: `${critV} of them vital medicines`, c: crit ? "crit" : "good" },
+    { k: "Stock-outs in 7 days", v: out7, s: "If nothing is done", c: out7 ? "warn" : "good" },
+    { k: "Transfers ready", v: tr.length, s: `${tr.filter(t => t.type === "stockout").length} prevent stock-outs, ${tr.filter(t => t.type === "expiry").length} rescue expiring lots` },
+    { k: "Expiry loss avoidable", v: inr(saved), s: `of ${inr(waste)} projected to expire unused`, c: "good" },
+    { k: "Reports overdue", v: stale, s: "Stock estimated from forecast", c: stale ? "warn" : "good" },
+    { k: "Bed occupancy", v: Math.round(occ / beds * 100) + "%", s: `${occ} of ${beds} beds`, c: occ / beds > 0.85 ? "warn" : "" },
+  ]);
+
+  const W = 560, Hh = 460, lon0 = 76.8, lon1 = 85.0, lat0 = 12.7, lat1 = 19.2;
+  const X = lon => 30 + (lon - lon0) / (lon1 - lon0) * (W - 60);
+  const Y = lat => 20 + (lat1 - lat) / (lat1 - lat0) * (Hh - 40);
+  const col = { crit: css("--crit"), warn: css("--warn"), ok: css("--ok") };
+  let g = "";
+  for (let lo = 77; lo <= 85; lo++) g += `<line x1="${X(lo)}" y1="${Y(lat1)}" x2="${X(lo)}" y2="${Y(lat0)}" stroke="var(--line)" stroke-width="0.6"/><text x="${X(lo)}" y="${Hh - 4}" font-size="9" fill="var(--muted)" text-anchor="middle" font-family="var(--font-data)">${lo}°E</text>`;
+  for (let la = 13; la <= 19; la++) g += `<line x1="${X(lon0)}" y1="${Y(la)}" x2="${X(lon1)}" y2="${Y(la)}" stroke="var(--line)" stroke-width="0.6"/><text x="4" y="${Y(la) + 3}" font-size="9" fill="var(--muted)" font-family="var(--font-data)">${la}°N</text>`;
+  const coast = [[84.8, 19.1], [84.0, 18.3], [83.3, 17.6], [82.3, 16.9], [81.6, 16.3], [81.1, 15.9], [80.3, 15.5], [80.1, 14.6], [80.2, 13.6], [80.3, 13.0]];
+  g += `<polyline points="${coast.map(c => X(c[0]) + "," + Y(c[1])).join(" ")}" fill="none" stroke="var(--surplus)" stroke-opacity="0.45" stroke-width="2" stroke-dasharray="4 3"/>`;
+  g += `<text x="${X(83.2)}" y="${Y(15.0)}" font-size="11" fill="var(--surplus)" fill-opacity="0.7" font-style="italic">Bay of Bengal</text>`;
+  const alerted = new Set(alerts().map(s => s.d.id));
+  DISTRICTS.forEach(d => {
+    if (alerted.has(d.id)) g += `<circle cx="${X(d.lon)}" cy="${Y(d.lat)}" r="34" fill="var(--crit)" fill-opacity="0.08" stroke="var(--crit)" stroke-opacity="0.5" stroke-dasharray="3 3"/>`;
+  });
+  TRANSFERS.filter(t => inDistrict(t.to)).slice(0, 40).forEach(t => {
+    g += `<line x1="${X(t.from.lon)}" y1="${Y(t.from.lat)}" x2="${X(t.to.lon)}" y2="${Y(t.to.lat)}" stroke="${t.type === "expiry" ? "var(--surplus)" : "var(--accent)"}" stroke-width="1.2" stroke-opacity="0.55"/>`;
+  });
+  PHCS.forEach(p => {
+    const s = phcStatus(p), dim = !inDistrict(p), stale = p.lastReport >= 3;
+    g += `<g opacity="${dim ? 0.2 : 1}"><circle cx="${X(p.lon)}" cy="${Y(p.lat)}" r="${4 + p.size * 3}" fill="${col[s]}" fill-opacity="${stale ? 0.35 : 0.85}" stroke="${stale ? "var(--ink)" : "var(--surface)"}" stroke-width="1.5" ${stale ? 'stroke-dasharray="2 2"' : ""}><title>${p.id} · ${p.name} · ${s === "crit" ? "2+ medicines will run out" : s === "warn" ? "1 medicine at risk" : "Healthy"}${stale ? ` · last report ${ago(p.lastReport)}` : ""}</title></circle></g>`;
+  });
+  DISTRICTS.forEach(d => {
+    const dim = districtFilter !== "all" && districtFilter !== d.id;
+    g += `<text x="${X(d.lon)}" y="${Y(d.lat) - 22}" font-size="10.5" text-anchor="middle" fill="var(--ink)" fill-opacity="${dim ? 0.3 : 0.9}" font-weight="600" stroke="var(--surface)" stroke-width="3" paint-order="stroke">${d.name}</text>`;
+  });
+  $("#map").innerHTML = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Map of PHCs in Andhra Pradesh coloured by stock risk">${g}</svg>`;
+
+  const top = ev.filter(e => e.status === "crit" || e.status === "warn").sort((a, b) => VEN_RANK[a.m.ven] - VEN_RANK[b.m.ven] || b.pOut - a.pOut || a.cover - b.cover).slice(0, 8);
+  $("#warnings").innerHTML = top.length ? top.map(e => `<li><span class="stripe ${e.status === "warn" ? "warn" : ""}"></span><div><div class="t">${esc(e.m.name)}${venTag(e.m)} · ${e.p.id} ${esc(e.p.name)}</div><div class="d">${e.age >= 3 ? "≈" : ""}${fmt(e.stock)} ${e.m.unit} left · ${fmt(e.cover, 1)} days cover vs ${e.m.lead}-day resupply${e.age >= 3 ? ` · estimated, last report ${ago(e.age)}` : ""}</div></div><span class="num">${Math.round(e.pOut * 100)}%</span></li>`).join("") : `<li><span></span><div class="d">No medicine lines at risk in this selection.</div><span></span></li>`;
+
+  const cnt = s => DISTRICTS.map(d => EVALS.filter(e => e.p.district === d.id && e.status === s).length);
+  chart("c-district", { type: "bar", data: { labels: DISTRICTS.map(d => d.name), datasets: [
+    { label: "Critical", data: cnt("crit"), backgroundColor: css("--crit"), borderRadius: 3 },
+    { label: "Warning", data: cnt("warn"), backgroundColor: css("--warn"), borderRadius: 3 },
+  ] }, options: { indexAxis: "y", scales: { x: { stacked: true, ticks: { precision: 0 }, grid: { color: css("--line") } }, y: { stacked: true, grid: { display: false }, ticks: { autoSkip: false } } }, plugins: { legend: { position: "bottom" } } } });
+}
+
+// ================= surveillance =================
+let svSel = null;
+function renderSurveillance() {
+  const rows = SIGNALS.filter(s => inDistrict({ district: s.d.id })).sort((a, b) => ({ alert: 0, watch: 1, normal: 2 }[a.status] - { alert: 0, watch: 1, normal: 2 }[b.status]) || b.z[SV_DAYS - 1] - a.z[SV_DAYS - 1]);
+  const al = rows.filter(s => s.status === "alert"), wa = rows.filter(s => s.status === "watch");
+  tiles("#sv-tiles", [
+    { k: "Alerts", v: al.length, s: al.length ? [...new Set(al.map(s => s.d.name))].join(", ") : "None", c: al.length ? "crit" : "good" },
+    { k: "On watch", v: wa.length, s: wa.length ? wa.map(s => `${s.d.name} (${s.s.id === "add" ? "diarrhoea" : s.s.id === "heat" ? "heat" : "fever"})`).join(", ") : "None", c: wa.length ? "warn" : "good" },
+    { k: "Signals monitored", v: rows.length, s: `${SYNDROMES.length} syndromes × ${rows.length / SYNDROMES.length} districts` },
+    { k: "Lead over declaration", v: "3–5 days", s: "Typical gain from syndromic alerts vs lab-confirmed declaration" },
+  ]);
+  if (!svSel || !rows.includes(svSel)) svSel = rows[0];
+  $("#sv-body").innerHTML = rows.map((s, i) => `<tr class="clickable${s === svSel ? " sel" : ""}" data-i="${i}" tabindex="0"><td>${s.d.name}</td><td>${s.s.name}</td><td class="n">${s.today}</td><td class="n">${fmt(s.baseline, 1)}</td><td class="n">${fmt(s.ratio, 2)}×</td><td class="n">${fmt(s.z[SV_DAYS - 1], 1)}</td><td class="n">${s.over}</td><td>${s.status === "alert" ? '<span class="pill crit">Alert</span>' : s.status === "watch" ? '<span class="pill warn">Watch</span>' : '<span class="pill ok">Normal</span>'}</td></tr>`).join("");
+  $("#sv-body").querySelectorAll("tr[data-i]").forEach(tr => {
+    const go = () => { svSel = rows[+tr.dataset.i]; renderSurveillance(); };
+    tr.addEventListener("click", go); tr.addEventListener("keydown", ev => { if (ev.key === "Enter") go(); });
+  });
+  const s = svSel; if (!s) return;
+  $("#sv-title").textContent = `${s.s.name} · ${s.d.name}, last ${SV_DAYS} days`;
+  const thr = s.a.map((_, t) => { if (t < 9) return null; const b = s.a.slice(t - 9, t - 2), m = mean(b); return m + 3 * Math.max(1, sdev(b), Math.sqrt(m)); });
+  chart("c-surv", { data: { labels: s.a.map((_, t) => t === SV_DAYS - 1 ? "today" : (SV_DAYS - 1 - t) % 7 === 0 ? `−${SV_DAYS - 1 - t}d` : ""), datasets: [
+    { type: "bar", label: "OPD cases", data: s.a, backgroundColor: s.a.map((_, t) => s.z[t] > 3 ? css("--crit") : css("--accent") + "99"), borderRadius: 2 },
+    { type: "line", label: "Alert threshold (baseline + 3 SD)", data: thr, borderColor: css("--warn"), borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, tension: 0.2 },
+  ] }, options: { scales: { x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 0 } }, y: { beginAtZero: true, grid: { color: css("--line") } } }, plugins: { legend: { position: "bottom" } } } });
+}
+
+// ================= stock =================
+let selected = null;
+function renderStock() {
+  const mf = $("#med-filter").value, sf = $("#status-filter").value;
+  const rows = EVALS.filter(e => inDistrict(e.p) && (mf === "all" || e.m.id === mf) && (sf === "all" || e.status === sf))
+    .sort((a, b) => ({ crit: 0, warn: 1, ok: 2, surplus: 3 }[a.status] - { crit: 0, warn: 1, ok: 2, surplus: 3 }[b.status]) || VEN_RANK[a.m.ven] - VEN_RANK[b.m.ven] || b.pOut - a.pOut || a.cover - b.cover).slice(0, 300);
+  if (!selected || !rows.includes(selected)) selected = rows[0] || null;
+  $("#stock-body").innerHTML = rows.map((e, i) => {
+    const cl = BASE[e.p.id][e.m.id].clean;
+    const tags = (e.age >= 3 ? `<span class="tag warn" title="Last report ${ago(e.age)}">est.</span>` : "") + (cl.censored.length ? `<span class="tag info" title="Stock-out days corrected">corr.</span>` : "") + (e.coldFault ? `<span class="tag crit" title="Refrigerator fault">fridge</span>` : "");
+    return `<tr class="clickable${e === selected ? " sel" : ""}" data-i="${i}" tabindex="0"><td><span class="mono">${e.p.id}</span> <span class="sub">${esc(DIST_BY_ID[e.p.district].name)}</span></td><td>${esc(e.m.name)}${venTag(e.m)}${tags}</td><td class="n">${e.age >= 3 ? "≈" : ""}${fmt(e.stock)}</td><td class="n">${fmt(e.daily, 1)}</td><td class="n">${e.cover >= EXT ? "60+" : fmt(e.cover, 1)}<span class="sub"> / ${e.m.lead}</span></td><td class="n">${Math.round(e.pOut * 100)}%</td><td>${pill(e.status)}</td></tr>`;
+  }).join("") || `<tr><td colspan="7">No lines match these filters.</td></tr>`;
+  $("#stock-body").querySelectorAll("tr[data-i]").forEach(tr => {
+    const go = () => { selected = rows[+tr.dataset.i]; renderStock(); };
+    tr.addEventListener("click", go); tr.addEventListener("keydown", ev => { if (ev.key === "Enter") go(); });
+  });
+  renderDetail();
+}
+function renderDetail() {
+  const e = selected;
+  if (!e) { $("#detail-title").textContent = "Forecast"; $("#detail-kv").innerHTML = ""; return; }
+  $("#detail-title").textContent = `${e.m.name} at ${e.p.id} ${e.p.name}`;
+  const B = BASE[e.p.id][e.m.id], W = 56, off = HIST - W;
+  const hist = e.p.hist[e.m.id].slice(-W);
+  const labels = [];
+  for (let k = -W; k < H; k++) labels.push(k < 0 ? (k % 7 === 0 ? `d${k}` : "") : (k % 7 === 0 ? `+${k}` : ""));
+  const fc = e.f.slice(0, H);
+  const sd = B.sd * (fc.reduce((a, v) => a + v, 0) / H) / Math.max(1e-6, B.level) * Math.sqrt(1 + e.age / e.m.lead);
+  const pad = new Array(W).fill(null), tailPad = new Array(H).fill(null);
+  const stockLine = []; let s = e.stock;
+  for (let k = 0; k < H; k++) { s -= fc[k]; stockLine.push(Math.max(0, s)); }
+  const cens = new Array(W).fill(null); B.clean.censored.forEach(c => { if (c.t >= off) cens[c.t - off] = c.fixed; });
+  const outl = new Array(W).fill(null); B.clean.outliers.forEach(c => { if (c.t >= off) outl[c.t - off] = c.fixed; });
+  const hasC = cens.some(v => v !== null), hasO = outl.some(v => v !== null);
+  chart("c-forecast", { data: { labels, datasets: [
+    { type: "line", label: "Recorded use", data: [...hist, ...tailPad], borderColor: css("--muted"), borderWidth: 1.5, pointRadius: 0, tension: 0.25, yAxisID: "y" },
+    ...(hasC ? [{ type: "line", label: "Stock-out days: estimated true demand", data: [...cens, ...tailPad], borderColor: css("--surplus"), backgroundColor: css("--surplus"), showLine: false, pointRadius: 3, yAxisID: "y" }] : []),
+    ...(hasO ? [{ type: "line", label: "Entry error: capped value", data: [...outl, ...tailPad], borderColor: css("--warn"), backgroundColor: css("--warn"), showLine: false, pointRadius: 4, pointStyle: "triangle", yAxisID: "y" }] : []),
+    { type: "line", label: "Forecast", data: [...pad.slice(1), hist[hist.length - 1], ...fc], borderColor: css("--accent"), borderWidth: 2, pointRadius: 0, tension: 0.25, yAxisID: "y" },
+    { type: "line", label: "80% band", data: [...pad, ...fc.map(v => v + 1.28 * sd)], borderColor: "transparent", backgroundColor: css("--accent") + "22", fill: "+1", pointRadius: 0, yAxisID: "y" },
+    { type: "line", label: "band-lo", data: [...pad, ...fc.map(v => Math.max(0, v - 1.28 * sd))], borderColor: "transparent", pointRadius: 0, yAxisID: "y" },
+    { type: "line", label: "Projected stock", data: [...pad.slice(1), e.stock, ...stockLine], borderColor: css(e.status === "crit" ? "--crit" : "--surplus"), borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, yAxisID: "y2" },
+  ] }, options: { interaction: { mode: "index", intersect: false }, scales: {
+    x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 0 } },
+    y: { title: { display: true, text: `${e.m.unit}/day` }, beginAtZero: true, grid: { color: css("--line") } },
+    y2: { position: "right", title: { display: true, text: "stock on hand" }, beginAtZero: true, grid: { display: false } },
+  }, plugins: { legend: { position: "bottom", labels: { filter: i => i.text !== "band-lo" } } } } });
+  const tr = TRANSFERS.filter(t => t.recv === e), out = TRANSFERS.filter(t => t.donor === e);
+  const cl = B.clean;
+  const bias = cl.censored.length ? ` A naive average of recorded use would forecast ${fmt(B.naive, 1)}/day, ${fmt((1 - B.naive / Math.max(1e-6, B.level * DOW_MEAN)) * 100)}% too low.` : "";
+  $("#detail-kv").innerHTML = `<dt>Stock on hand</dt><dd class="num">${e.age >= 3 ? `≈${fmt(e.stock)} ${e.m.unit} (${fmt(e.reported)} reported ${ago(e.age)})` : `${fmt(e.stock)} ${e.m.unit}`}</dd>
+  <dt>Demand over lead time</dt><dd class="num">${fmt(e.dL)} ${e.m.unit} in ${e.m.lead} days</dd>
+  <dt>Stock-out probability</dt><dd class="num">${Math.round(e.pOut * 100)}%</dd>
+  <dt>Lots</dt><dd>${e.batches.map(b => `${b.lot}: ${fmt(b.qty)} exp ${dateIn(b.exp)}${b.waste > 0 ? ` <span class="tag crit">${fmt(b.waste)} will expire</span>` : ""}`).join("<br>") || "None"}</dd>
+  <dt>History corrections</dt><dd>${cl.censored.length || cl.outliers.length ? `${cl.censored.length ? `${cl.censored.length} stock-out days re-estimated.` : ""} ${cl.outliers.length ? `${cl.outliers.length} entry error${cl.outliers.length > 1 ? "s" : ""} capped.` : ""}${bias}` : "None needed"}</dd>
+  <dt>Classification</dt><dd>${VEN_NAME[e.m.ven]}${e.m.cold ? ` · cold chain (2–8 °C), fridge ${e.p.ilrOk ? "working" : "<b>faulty</b>"}` : ""}</dd>
+  <dt>Action</dt><dd>${tr.length ? tr.map(t => `Receive ${fmt(t.qty)} from ${t.from.id} (${fmt(t.km)} km)`).join("; ") : out.length ? out.map(t => `Send ${fmt(t.qty)} to ${t.to.id}${t.type === "expiry" ? " before expiry" : ""}`).join("; ") : e.coldFault ? "Repair refrigerator, then restock" : e.status === "crit" ? "Indent from state warehouse" : e.status === "surplus" ? "Available as donor" : "None needed"}</dd>`;
+}
+
+// ================= expiry =================
+function renderExpiry() {
+  const ev = EVALS.filter(e => inDistrict(e.p));
+  const lots = [];
+  ev.forEach(e => e.batches.filter(b => b.waste > 0).forEach(b => lots.push({ e, b, value: b.waste * e.m.price })));
+  lots.sort((a, b) => b.value - a.value);
+  const tr = TRANSFERS.filter(t => t.type === "expiry" && inDistrict(t.from));
+  const waste = lots.reduce((a, l) => a + l.value, 0), saved = tr.reduce((a, t) => a + t.value, 0);
+  const near = ev.reduce((a, e) => a + e.batches.filter(b => b.exp <= 90).reduce((x, b) => x + b.qty * e.m.price, 0), 0);
+  tiles("#ex-tiles", [
+    { k: "Projected to expire unused", v: inr(waste), s: `${lots.length} lots at ${new Set(lots.map(l => l.e.p)).size} PHCs`, c: waste ? "crit" : "good" },
+    { k: "Recovered by transfers", v: inr(saved), s: `${tr.length} expiry-rescue transfers, ${waste ? Math.round(saved / waste * 100) : 0}% of the loss`, c: "good" },
+    { k: "Remaining loss", v: inr(Math.max(0, waste - saved)), s: "Return to warehouse or exchange with supplier" },
+    { k: "Expiring within 90 days", v: inr(near), s: "All lots, used or not" },
+  ]);
+  $("#ex-body").innerHTML = lots.slice(0, 150).map(l => {
+    const t = tr.filter(x => x.donor === l.e && x.lot.lot === l.b.lot);
+    const q = t.reduce((a, x) => a + x.qty, 0);
+    return `<tr><td><span class="mono">${l.e.p.id}</span> <span class="sub">${esc(DIST_BY_ID[l.e.p.district].name)}</span></td><td>${esc(l.e.m.name)}${coldTag(l.e.m)}</td><td class="mono">${l.b.lot}</td><td>${dateIn(l.b.exp)} <span class="sub">(${l.b.exp} d)</span></td><td class="n">${fmt(l.b.qty)}</td><td class="n">${fmt(l.b.use)}</td><td class="n">${fmt(l.b.waste)}</td><td class="n">${inr(l.value)}</td><td>${t.length ? `<span class="pill ok">Send ${fmt(q)} to ${t.map(x => x.to.id).join(", ")}</span>` : '<span class="pill muted">Return / exchange</span>'}</td></tr>`;
+  }).join("") || `<tr><td colspan="9">No lots at risk of expiry in this selection.</td></tr>`;
+  const byMed = MEDS.map(m => ({ m, loss: lots.filter(l => l.e.m === m).reduce((a, l) => a + l.value, 0), rec: tr.filter(t => t.m === m).reduce((a, t) => a + t.value, 0) })).filter(x => x.loss > 0).sort((a, b) => b.loss - a.loss);
+  chart("c-expiry", { type: "bar", data: { labels: byMed.map(x => x.m.name.replace(/ \(.*\)/, "")), datasets: [
+    { label: "Recovered by transfer", data: byMed.map(x => Math.round(Math.min(x.rec, x.loss))), backgroundColor: css("--ok"), borderRadius: 3 },
+    { label: "Still lost", data: byMed.map(x => Math.round(Math.max(0, x.loss - x.rec))), backgroundColor: css("--crit"), borderRadius: 3 },
+  ] }, options: { indexAxis: "y", scales: { x: { stacked: true, ticks: { callback: v => "₹" + fmt(v) }, grid: { color: css("--line") } }, y: { stacked: true, grid: { display: false }, ticks: { autoSkip: false } } }, plugins: { legend: { position: "bottom" }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ₹${fmt(c.raw)}` } } } } });
+}
+
+// ================= transfers =================
+function renderRedistribute() {
+  const tr = TRANSFERS.filter(t => inDistrict(t.to) || inDistrict(t.from));
+  const ind = INDENTS.filter(i => inDistrict(i.p));
+  const so = tr.filter(t => t.type === "stockout"), ex = tr.filter(t => t.type === "expiry");
+  const fixed = new Set(so.filter(t => t.after >= t.m.lead).map(t => t.recv)).size;
+  tiles("#rd-tiles", [
+    { k: "Stock-outs averted", v: fixed, s: `${so.length} transfer orders`, c: "good" },
+    { k: "Expiring stock rescued", v: inr(ex.reduce((a, t) => a + t.value, 0)), s: `${ex.length} transfer orders`, c: "good" },
+    { k: "Average haul", v: tr.length ? fmt(tr.reduce((a, t) => a + t.km, 0) / tr.length) + " km" : "–", s: "Road distance, nearest donor first" },
+    { k: "Warehouse indents", v: ind.length, s: `${inr(ind.reduce((a, i) => a + i.cost, 0))} · ${ind.filter(i => i.m.ven === "V").length} vital`, c: ind.length ? "warn" : "good" },
+  ]);
+  $("#rd-body").innerHTML = tr.map(t => `<tr><td>${t.type === "stockout" ? '<span class="pill crit">Prevent stock-out</span>' : '<span class="pill info">Rescue expiring</span>'}</td><td>${esc(t.m.name)}${venTag(t.m)}${coldTag(t.m)}</td><td><span class="mono">${t.from.id}</span> ${esc(t.from.name)}</td><td><span class="mono">${t.to.id}</span> ${esc(t.to.name)}</td><td class="n">${fmt(t.qty)} ${t.m.unit}</td><td class="n">${fmt(t.km)} km</td><td class="n">${fmt(t.eta, 1)} h</td><td>${t.type === "stockout" ? `cover ${fmt(t.before, 1)} → ${t.after >= EXT ? "60+" : fmt(t.after, 1)} d` : `${inr(t.value)} saved · lot ${t.lot.lot}, exp ${t.lot.exp} d`}</td><td>${approved ? '<span class="pill ok">Dispatched</span>' : '<span class="pill warn">Pending</span>'}</td></tr>`).join("") || `<tr><td colspan="9">No transfers needed in this selection.</td></tr>`;
+  $("#indent-body").innerHTML = ind.map(i => `<tr><td>${i.m.ven === "V" ? '<span class="pill crit">Vital</span>' : i.m.ven === "E" ? '<span class="pill warn">Essential</span>' : '<span class="pill muted">Non-essential</span>'}</td><td>${esc(i.m.name)}${coldTag(i.m)}</td><td><span class="mono">${i.p.id}</span> ${esc(i.p.name)}</td><td>${DIST_BY_ID[i.p.district].name}</td><td class="n">${fmt(i.qty)} ${i.m.unit}</td><td class="n">${inr(i.cost)}</td><td>${i.note ? `<span class="tag crit">${esc(i.note)}</span>` : ""}</td></tr>`).join("") || `<tr><td colspan="7">All critical lines are covered by transfers.</td></tr>`;
+}
+
+// ================= capacity & referral =================
+function renderCapacity() {
+  const phcs = PHCS.filter(inDistrict);
+  const beds = phcs.reduce((a, p) => a + p.beds, 0), occ = phcs.reduce((a, p) => a + p.occupied, 0);
+  const moAbs = phcs.filter(p => !p.moPresent).length;
+  const full = phcs.filter(p => p.occupied / p.beds >= 0.9).length;
+  const att = phcs.reduce((a, p) => a + p.attendance.slice(-7).reduce((x, y) => x + y, 0) / 7, 0) / phcs.length;
+  const ilr = phcs.filter(p => !p.ilrOk).length;
+  tiles("#cap-tiles", [
+    { k: "Beds available", v: beds - occ, s: `of ${beds} total` },
+    { k: "PHCs ≥ 90% full", v: full, s: "Use the referral finder", c: full ? "warn" : "good" },
+    { k: "Medical officer absent", v: moAbs, s: "Today", c: moAbs ? "crit" : "good" },
+    { k: "Staff attendance", v: Math.round(att * 100) + "%", s: "7-day average", c: att < 0.8 ? "warn" : "good" },
+    { k: "Fridge faults", v: ilr, s: "Cold-chain items cannot be stocked", c: ilr ? "crit" : "good" },
+  ]);
+  const ds = DISTRICTS.filter(d => districtFilter === "all" || d.id === districtFilter);
+  chart("c-beds", { type: "bar", data: { labels: ds.map(d => d.name), datasets: [
+    { label: "Occupied", data: ds.map(d => PHCS.filter(p => p.district === d.id).reduce((a, p) => a + p.occupied, 0)), backgroundColor: css("--accent"), borderRadius: 3 },
+    { label: "Free", data: ds.map(d => PHCS.filter(p => p.district === d.id).reduce((a, p) => a + p.beds - p.occupied, 0)), backgroundColor: css("--line"), borderRadius: 3 },
+  ] }, options: { scales: { x: { stacked: true, grid: { display: false }, ticks: { maxRotation: 60, minRotation: 0 } }, y: { stacked: true, grid: { color: css("--line") } } }, plugins: { legend: { position: "bottom" } } } });
+  const days = []; for (let k = 13; k >= 0; k--) days.push(k === 0 ? "today" : `-${k}d`);
+  const pal = ["--accent", "--surplus", "--warn", "--ok", "--crit", "--muted"];
+  chart("c-staff", { type: "line", data: { labels: days, datasets: ds.slice(0, 6).map((d, i) => {
+    const pp = PHCS.filter(p => p.district === d.id);
+    return { label: d.name, data: days.map((_, t) => Math.round(pp.reduce((a, p) => a + p.attendance[t], 0) / pp.length * 100)), borderColor: css(pal[i]), backgroundColor: css(pal[i]), pointRadius: 0, borderWidth: 1.8, tension: 0.3 };
+  }) }, options: { scales: { y: { min: 40, max: 100, ticks: { callback: v => v + "%" }, grid: { color: css("--line") } }, x: { grid: { display: false } } }, plugins: { legend: { position: "bottom" } } } });
+  const sel = $("#ref-from");
+  const byFull = PHCS.slice().sort((a, b) => b.occupied / b.beds - a.occupied / a.beds);
+  if (!sel.options.length) byFull.forEach(p => sel.insertAdjacentHTML("beforeend", `<option value="${p.id}">${p.id} ${esc(p.name)} (${p.occupied}/${p.beds} beds${p.moPresent ? "" : ", no MO"})</option>`));
+  renderReferral();
+  $("#cap-body").innerHTML = phcs.slice().sort((a, b) => b.occupied / b.beds - a.occupied / a.beds).map(p => {
+    const a7 = p.attendance.slice(-7).reduce((x, y) => x + y, 0) / 7, r = p.occupied / p.beds;
+    const flag = !p.moPresent ? '<span class="pill crit">No MO today</span>' : r >= 0.9 ? '<span class="pill warn">Near full</span>' : a7 < 0.75 ? '<span class="pill warn">Low attendance</span>' : '<span class="pill ok">OK</span>';
+    return `<tr><td><span class="mono">${p.id}</span> ${esc(p.name)}</td><td>${DIST_BY_ID[p.district].name}</td><td><span class="meter"><b style="width:${Math.round(r * 100)}%"></b></span><span class="num">${Math.round(r * 100)}%</span></td><td class="n">${p.occupied}/${p.beds}</td><td class="n">${p.moPresent ? "Present" : "Absent"}</td><td class="n">${p.nursesPresent}/${p.nurses}</td><td class="n">${Math.round(a7 * 100)}%</td><td>${p.ilrOk ? '<span class="pill ok">Fridge OK</span>' : '<span class="pill crit">Fridge fault</span>'}</td><td>${flag}</td></tr>`;
+  }).join("");
+}
+function renderReferral() {
+  const from = PHC_BY_ID[$("#ref-from").value]; if (!from) return;
+  const vital = MEDS.filter(m => m.ven === "V");
+  const opts = PHCS.filter(p => p !== from && p.moPresent && p.beds - p.occupied > 0).map(p => ({ p, km: haversine(from, p) * ROAD })).sort((a, b) => a.km - b.km).slice(0, 5);
+  $("#ref-body").innerHTML = opts.map(o => {
+    const short = vital.filter(m => { const e = EVAL_OF.get(o.p.id + m.id); return e && e.status === "crit"; });
+    return `<tr><td><span class="mono">${o.p.id}</span> ${esc(o.p.name)}</td><td>${DIST_BY_ID[o.p.district].name}</td><td class="n">${fmt(o.km)} km</td><td class="n">${fmt(o.km / 40 * 60)} min</td><td class="n">${o.p.beds - o.p.occupied}</td><td><span class="pill ok">On duty</span></td><td>${short.length ? `<span class="tag crit">Low: ${short.map(m => m.id).join(", ")}</span>` : '<span class="pill ok">All vital in stock</span>'}</td></tr>`;
+  }).join("") || `<tr><td colspan="7">No PHC with a free bed and a medical officer on duty.</td></tr>`;
+}
+
+// ================= data quality & CSV =================
+function renderQuality() {
+  const phcs = PHCS.filter(inDistrict);
+  const stale = phcs.filter(p => p.lastReport >= 3).sort((a, b) => b.lastReport - a.lastReport);
+  const fixes = [];
+  phcs.forEach(p => MEDS.forEach(m => {
+    const cl = BASE[p.id][m.id].clean, raw = p.hist[m.id];
+    if (cl.censored.length) { const t0 = cl.censored[0].t, t1 = cl.censored[cl.censored.length - 1].t; fixes.push({ p, m, kind: "stock-out", when: `${HIST - t0} to ${HIST - t1} days ago`, rec: "0 / day", used: `${fmt(mean(cl.censored.map(c => c.fixed)), 1)} / day`, n: cl.censored.length, hidden: cl.censored.reduce((a, c) => a + c.fixed, 0) }); }
+    cl.outliers.forEach(o => fixes.push({ p, m, kind: "entry", when: `${HIST - o.t} days ago`, rec: fmt(raw[o.t]), used: fmt(o.fixed, 1), n: 1 }));
+  }));
+  const censoredDays = fixes.filter(f => f.kind === "stock-out").reduce((a, f) => a + f.n, 0);
+  const hidden = fixes.filter(f => f.kind === "stock-out").reduce((a, f) => a + f.hidden * f.m.price, 0);
+  tiles("#dq-tiles", [
+    { k: "Reported in last 24 h", v: `${phcs.filter(p => p.lastReport <= 1).length}/${phcs.length}`, s: "PHCs", c: "good" },
+    { k: "Reports overdue", v: stale.length, s: "3+ days; stock estimated", c: stale.length ? "warn" : "good" },
+    { k: "Stock-out days corrected", v: censoredDays, s: `${inr(hidden)} of hidden demand restored to forecasts` },
+    { k: "Entry errors caught", v: fixes.filter(f => f.kind === "entry").length, s: "Capped before model fitting" },
+  ]);
+  $("#dq-stale").innerHTML = stale.map(p => `<tr><td><span class="mono">${p.id}</span> ${esc(p.name)}</td><td>${DIST_BY_ID[p.district].name}</td><td class="n">${ago(p.lastReport)}</td><td class="n">${EVALS.filter(e => e.p === p && e.status === "crit").length}</td><td>IVR reminder sent</td></tr>`).join("") || `<tr><td colspan="5">All PHCs reported in the last 2 days.</td></tr>`;
+  $("#dq-fix").innerHTML = fixes.map(f => `<tr><td><span class="mono">${f.p.id}</span></td><td>${f.m.id}</td><td>${f.kind === "stock-out" ? `<span class="pill info">Stock-out, ${f.n} d</span>` : '<span class="pill warn">Entry error</span>'}</td><td>${f.when.replace(" days ago", "d ago").replace(" to ", "–")}</td><td class="n">${f.rec} → ${f.used}</td></tr>`).join("") || `<tr><td colspan="5">No corrections needed.</td></tr>`;
+  $("#codes").textContent = MEDS.map(m => m.id).join(", ");
+}
+function ledgerCsv() {
+  return ["phc_id,phc_name,district,medicine_code,medicine,stock_reported,reported_days_ago,stock_estimated_today,daily_forecast,days_cover,p_stockout,status", ...EVALS.map(e => [e.p.id, `"${e.p.name}"`, DIST_BY_ID[e.p.district].name, e.m.id, `"${e.m.name}"`, e.reported, e.age, e.stock, e.daily.toFixed(1), Math.min(EXT, e.cover).toFixed(1), e.pOut.toFixed(2), e.status].join(","))].join("\n");
+}
+// set stock from a report: less stock = consumed from the earliest lots; more stock = a new delivery lot
+function setStock(p, m, qty, expDays) {
+  const cur = p.batches[m.id].reduce((a, b) => a + b.qty, 0);
+  if (expDays > 0) p.batches[m.id] = [{ lot: `${m.id}-RPT`, qty, exp: expDays }];
+  else if (qty <= cur) p.batches[m.id] = drawFefo(p.batches[m.id], cur - qty);
+  else p.batches[m.id] = p.batches[m.id].concat([{ lot: `${m.id}-NEW`, qty: qty - cur, exp: Math.round(m.shelf * 0.85) }]).sort((a, b) => a.exp - b.exp);
+  p.stock[m.id] = qty; p.lastReport = 0;
+}
+function importCsv(text) {
+  const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  if (!lines.length) return "Nothing to import.";
+  const head = lines[0].toLowerCase().split(",").map(s => s.trim());
+  const ip = head.indexOf("phc_id"), im = head.indexOf("medicine_code"), is = head.indexOf("stock"), ie = head.indexOf("expiry_days");
+  if (ip < 0 || im < 0 || is < 0) return "Header must include phc_id, medicine_code and stock.";
+  let ok = 0; const bad = [];
+  lines.slice(1).forEach((l, i) => {
+    const c = l.split(",").map(s => s.trim());
+    const p = PHC_BY_ID[(c[ip] || "").toUpperCase()], m = MED_BY_ID[(c[im] || "").toUpperCase()], q = Number(c[is]), ex = ie >= 0 ? Number(c[ie]) : 0;
+    if (!p || !m || !Number.isFinite(q) || q < 0) { bad.push(`row ${i + 2}`); return; }
+    setStock(p, m, Math.round(q), Number.isFinite(ex) && ex > 0 ? Math.round(ex) : 0); ok++;
+  });
+  refresh();
+  return `✓ ${ok} rows imported.${bad.length ? ` ✗ Skipped ${bad.join(", ")} (unknown PHC or medicine code, or invalid stock).` : ""} Forecasts, transfers and expiry risk recomputed.`;
+}
+
+// ================= federated learning =================
+const NODES = [
+  { id: "BR", name: "Brazil", n: 900 }, { id: "RU", name: "Russia", n: 700 }, { id: "IN", name: "India", n: 1600 },
+  { id: "CN", name: "China", n: 1400 }, { id: "ZA", name: "South Africa", n: 60 }, { id: "EG", name: "Egypt", n: 45 },
+];
+const FEATS = ["bias", "weekday", "temp anomaly", "rainfall", "outbreak flag", "last-week demand"];
+function makeNodeData(node, r) {
+  const g = gaussOf(r);
+  const shared = [20, 4, 3.5, 2.5, 14, 0.55];
+  const w = shared.map(v => v * (1 + (r() - 0.5) * 0.06));
+  const gen = (n, outbreakRate) => { const X = [], y = []; for (let i = 0; i < n; i++) { const x = [1, r() < 5 / 7 ? 1 : 0, g(), Math.max(0, g()) * 1.2, r() < outbreakRate ? 1 : 0, 10 + r() * 30]; X.push(x); y.push(x.reduce((a, v, j) => a + v * w[j], 0) + g() * 3); } return { X, y }; };
+  node.train = gen(node.n, node.n < 100 ? 0.01 : 0.12); node.test = gen(400, 0.12);
+}
+NODES.forEach(n => makeNodeData(n, mulberry32(n.id.charCodeAt(0) * 97 + n.id.charCodeAt(1))));
+const SCALE = [1, 1, 1, 1, 1, 30];
+const scaled = x => x.map((v, j) => v / SCALE[j]);
+function sgd(w, data, epochs, lr) {
+  w = w.slice();
+  for (let e = 0; e < epochs; e++) {
+    const g = new Array(w.length).fill(0);
+    data.X.forEach((x, i) => { const xs = scaled(x); const err = xs.reduce((a, v, j) => a + v * w[j], 0) - data.y[i]; xs.forEach((v, j) => g[j] += err * v); });
+    w = w.map((v, j) => v - lr * g[j] / data.X.length);
+  }
+  return w;
+}
+const mae = (w, d) => d.X.reduce((a, x, i) => a + Math.abs(scaled(x).reduce((s, v, j) => s + v * w[j], 0) - d.y[i]), 0) / d.X.length;
+let fedDone = null;
+function renderFedNodes(extra) {
+  $("#fed-nodes").innerHTML = NODES.map(n => `<div class="node"><b>${n.name}</b><span class="num">${fmt(n.n)} PHC-days local</span><span>${extra && extra[n.id] ? extra[n.id] : "Waiting to train"}</span></div>`).join("");
+}
+function runFederated() {
+  const R = +$("#rounds").value, localEpochs = 5, lr = 0.15;
+  const W0 = new Array(FEATS.length).fill(0);
+  const localOnly = {};
+  NODES.forEach(n => { localOnly[n.id] = sgd(W0, n.train, R * localEpochs, lr); });
+  let g = W0.slice();
+  const curve = [], total = NODES.reduce((a, n) => a + n.n, 0);
+  for (let r = 0; r < R; r++) {
+    const agg = new Array(FEATS.length).fill(0);
+    NODES.forEach(n => { const w = sgd(g, n.train, localEpochs, lr); w.forEach((v, j) => agg[j] += v * n.n / total); });
+    g = agg;
+    curve.push(NODES.reduce((a, n) => a + mae(g, n.test), 0) / NODES.length);
+  }
+  const localEnd = NODES.reduce((a, n) => a + mae(localOnly[n.id], n.test), 0) / NODES.length;
+  fedDone = true;
+  chart("c-fed", { type: "line", data: { labels: curve.map((_, i) => i + 1), datasets: [
+    { label: "Federated global model", data: curve, borderColor: css("--accent"), backgroundColor: css("--accent") + "22", fill: true, pointRadius: 0, borderWidth: 2, tension: 0.3 },
+    { label: "Local-only (after same compute)", data: curve.map(() => localEnd), borderColor: css("--muted"), borderDash: [5, 4], pointRadius: 0, borderWidth: 1.5 },
+  ] }, options: { scales: { x: { title: { display: true, text: "round" }, grid: { display: false } }, y: { beginAtZero: true, grid: { color: css("--line") } } }, plugins: { legend: { position: "bottom" } } } });
+  chart("c-fed-bar", { type: "bar", data: { labels: NODES.map(n => n.name), datasets: [
+    { label: "Local-only", data: NODES.map(n => +mae(localOnly[n.id], n.test).toFixed(2)), backgroundColor: css("--line"), borderRadius: 3 },
+    { label: "Federated", data: NODES.map(n => +mae(g, n.test).toFixed(2)), backgroundColor: css("--accent"), borderRadius: 3 },
+  ] }, options: { scales: { y: { beginAtZero: true, grid: { color: css("--line") } }, x: { grid: { display: false } } }, plugins: { legend: { position: "bottom" } } } });
+  const extra = {};
+  NODES.forEach(n => { const a = mae(localOnly[n.id], n.test), b = mae(g, n.test); extra[n.id] = `MAE ${fmt(a, 2)} → ${fmt(b, 2)} (${a > b ? "−" : "+"}${fmt(Math.abs(1 - b / a) * 100)}%)`; });
+  renderFedNodes(extra);
+  const bytes = R * NODES.length * FEATS.length * 8 * 2;
+  $("#fed-foot").textContent = `Shared across ${R} rounds: ${fmt(bytes / 1024, 1)} KB of model weights. Raw records kept inside national borders: ${fmt(total)} PHC-days. Model features: ${FEATS.join(", ")}. National datasets are synthetic, drawn from related but not identical demand patterns.`;
+}
+
+// ================= AI brief =================
+function briefContext() {
+  const ev = EVALS.filter(e => inDistrict(e.p));
+  const crit = ev.filter(e => e.status === "crit").sort((a, b) => VEN_RANK[a.m.ven] - VEN_RANK[b.m.ven] || b.pOut - a.pOut);
+  const byMed = {};
+  crit.forEach(e => { byMed[e.m.name] = (byMed[e.m.name] || 0) + 1; });
+  const phcs = PHCS.filter(inDistrict);
+  const beds = phcs.reduce((a, p) => a + p.beds, 0), occ = phcs.reduce((a, p) => a + p.occupied, 0);
+  const tr = TRANSFERS.filter(t => inDistrict(t.to));
+  return {
+    area: districtFilter === "all" ? "Andhra Pradesh (12 districts)" : DIST_BY_ID[districtFilter].name + " district",
+    scenario: scenario === "normal" ? "Normal operations" : `${SCENARIOS[scenario].name} in ${[...activeDistricts].map(id => DIST_BY_ID[id].name).join(", ")}`,
+    surveillance_alerts: alerts().map(s => ({ district: s.d.name, syndrome: s.s.name, ratio_to_baseline: +s.ratio.toFixed(1), days_above_threshold: s.over })),
+    phcs_monitored: phcs.length,
+    critical_lines: crit.length,
+    critical_vital_lines: crit.filter(e => e.m.ven === "V").length,
+    critical_by_medicine: byMed,
+    top_risks: crit.slice(0, 6).map(e => ({ phc: `${e.p.id} ${e.p.name}`, medicine: e.m.name, class: VEN_NAME[e.m.ven], stock: e.stock, stock_is_estimate: e.age >= 3, days_cover: +e.cover.toFixed(1), lead_days: e.m.lead, p_stockout: +e.pOut.toFixed(2) })),
+    stockout_transfers: tr.filter(t => t.type === "stockout").length,
+    example_transfers: tr.filter(t => t.type === "stockout").slice(0, 5).map(t => ({ medicine: t.m.name, qty: t.qty, unit: t.m.unit, from: t.from.id, to: t.to.id, km: Math.round(t.km) })),
+    expiry_loss_projected_inr: Math.round(ev.reduce((a, e) => a + e.wasteValue, 0)),
+    expiry_loss_recovered_inr: Math.round(tr.filter(t => t.type === "expiry").reduce((a, t) => a + t.value, 0)),
+    warehouse_indents: INDENTS.filter(i => inDistrict(i.p)).length,
+    warehouse_indent_cost_inr: Math.round(INDENTS.filter(i => inDistrict(i.p)).reduce((a, i) => a + i.cost, 0)),
+    overdue_reports: phcs.filter(p => p.lastReport >= 3).map(p => p.id),
+    fridge_faults: phcs.filter(p => !p.ilrOk).map(p => p.id),
+    bed_occupancy_pct: Math.round(occ / beds * 100),
+    phcs_without_medical_officer_today: phcs.filter(p => !p.moPresent).map(p => p.id),
+  };
+}
+const T = {
+  en: c => `SITUATION BRIEF · ${c.area}\nScenario: ${c.scenario}\n${c.surveillance_alerts.length ? `Surveillance: ${c.surveillance_alerts.map(a => `${a.syndrome.toLowerCase()} in ${a.district} at ${a.ratio_to_baseline}× baseline`).join("; ")}.\n` : ""}\n1. Stock risk\n${c.critical_lines} medicine lines across ${c.phcs_monitored} PHCs will run out before resupply arrives, ${c.critical_vital_lines} of them vital medicines.${Object.keys(c.critical_by_medicine).length ? " Most affected: " + Object.entries(c.critical_by_medicine).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k} (${v} PHCs)`).join(", ") + "." : ""}\n${c.top_risks.slice(0, 3).map(r => `• ${r.phc}: ${r.medicine}, ${r.days_cover} days left vs ${r.lead_days}-day resupply (${Math.round(r.p_stockout * 100)}% stock-out risk)${r.stock_is_estimate ? ", stock estimated" : ""}`).join("\n")}\n\n2. Actions ready for approval\n${c.stockout_transfers} inter-PHC transfers move surplus stock to at-risk centres.\n${c.example_transfers.slice(0, 3).map(t => `• ${t.qty} ${t.unit} ${t.medicine}: ${t.from} → ${t.to} (${t.km} km)`).join("\n")}\nExpiry: ₹${fmt(c.expiry_loss_projected_inr)} of stock will expire unused; transfers recover ₹${fmt(c.expiry_loss_recovered_inr)}.\nWarehouse indents: ${c.warehouse_indents} lines, ₹${fmt(c.warehouse_indent_cost_inr)}, vital medicines first.\n\n3. Capacity and data\nBed occupancy ${c.bed_occupancy_pct}%. No medical officer today at ${c.phcs_without_medical_officer_today.length} PHCs. Fridge faults: ${c.fridge_faults.join(", ") || "none"}. Reports overdue: ${c.overdue_reports.join(", ") || "none"}.\n\nRecommendation: ${c.surveillance_alerts.length && c.scenario === "Normal operations" ? "apply the outbreak demand scenario for the alerted districts, then " : ""}approve the transfer list today, repair the faulty fridges before restocking cold-chain items, and chase overdue reports.`,
+  hi: c => `स्थिति रिपोर्ट · ${c.area}\nपरिदृश्य: ${c.scenario === "Normal operations" ? "सामान्य संचालन" : c.scenario}\n${c.surveillance_alerts.length ? `निगरानी चेतावनी: ${c.surveillance_alerts.map(a => `${a.district} (${a.ratio_to_baseline}× सामान्य से अधिक)`).join(", ")}\n` : ""}\n1. दवा स्टॉक जोखिम\n${c.phcs_monitored} PHC में ${c.critical_lines} दवा लाइनें अगली आपूर्ति से पहले खत्म हो जाएंगी, जिनमें ${c.critical_vital_lines} जीवनरक्षक दवाएं हैं।\n${c.top_risks.slice(0, 3).map(r => `• ${r.phc}: ${r.medicine}, ${r.days_cover} दिन का स्टॉक, आपूर्ति ${r.lead_days} दिन में (जोखिम ${Math.round(r.p_stockout * 100)}%)`).join("\n")}\n\n2. स्वीकृति हेतु कार्रवाई\n${c.stockout_transfers} PHC-से-PHC स्थानांतरण तैयार हैं।\nएक्सपायरी: ₹${fmt(c.expiry_loss_projected_inr)} का स्टॉक बिना उपयोग के एक्सपायर होगा; स्थानांतरण से ₹${fmt(c.expiry_loss_recovered_inr)} बचेगा।\nराज्य गोदाम मांग: ${c.warehouse_indents} लाइनें, ₹${fmt(c.warehouse_indent_cost_inr)}।\n\n3. क्षमता\nबेड भराव ${c.bed_occupancy_pct}%। फ्रिज खराब: ${c.fridge_faults.join(", ") || "कोई नहीं"}।\n\nसिफारिश: आज ही स्थानांतरण सूची स्वीकृत करें और खराब फ्रिज की मरम्मत कराएं।`,
+  pt: c => `RELATÓRIO DE SITUAÇÃO · ${c.area}\nCenário: ${c.scenario === "Normal operations" ? "Operação normal" : c.scenario}\n\n1. Risco de estoque\n${c.critical_lines} linhas de medicamentos em ${c.phcs_monitored} unidades básicas vão esgotar antes do reabastecimento (${c.critical_vital_lines} vitais).\n${c.top_risks.slice(0, 3).map(r => `• ${r.phc}: ${r.medicine}, ${r.days_cover} dias restantes vs reabastecimento em ${r.lead_days} dias (risco ${Math.round(r.p_stockout * 100)}%)`).join("\n")}\n\n2. Ações para aprovação\n${c.stockout_transfers} transferências entre unidades prontas.\nValidade: ₹${fmt(c.expiry_loss_projected_inr)} em estoque vencerão sem uso; transferências recuperam ₹${fmt(c.expiry_loss_recovered_inr)}.\n\n3. Capacidade\nOcupação de leitos ${c.bed_occupancy_pct}%. Geladeiras com defeito: ${c.fridge_faults.join(", ") || "nenhuma"}.\n\nRecomendação: aprovar a lista de transferências hoje.`,
+};
+async function genBrief() {
+  const ctx = briefContext();
+  $("#brief-ctx").textContent = JSON.stringify(ctx, null, 2);
+  const lang = $("#lang").value, langName = $("#lang").selectedOptions[0].textContent;
+  let key = $("#gkey").value.trim();
+  try { if (key) localStorage.setItem("ag-gkey", key); } catch (e) {}
+  const out = $("#brief-out"), src = $("#brief-src");
+  const offline = why => {
+    out.textContent = (T[lang] || T.en)(ctx);
+    src.textContent = (T[lang] ? "Written by the built-in template. " : `The built-in template has no ${langName}; showing English. `) + why;
+  };
+  if (!key) { offline("Add a Gemini API key for an AI-written brief in any language."); return; }
+  out.textContent = "Asking Gemini…"; src.textContent = "";
+  const prompt = `You are a public-health logistics officer. Write a concise situation brief (max 230 words) for a District Health Officer in ${langName}. Use three numbered sections: stock risk, actions ready for approval (transfers, expiry, indents), capacity and data issues. Prioritise vital medicines. Be specific with PHC IDs, quantities, rupee values and days. Say when a stock figure is an estimate. End with one clear recommendation. Use only this data:\n${JSON.stringify(ctx)}`;
+  try {
+    const model = $("#gmodel").value.trim() || "gemini-2.5-flash";
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.3 } }) });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.error && j.error.message || res.status);
+    out.textContent = j.candidates[0].content.parts.map(p => p.text).join("");
+    src.textContent = `Written by ${model} from the data on the right.`;
+  } catch (err) {
+    offline(`Gemini request failed (${err.message}). Check the key and model name, or that this host allows calls to Google.`);
+  }
+}
+
+// ================= field report intake =================
+let HELD = [];
+function ingest() {
+  const lines = $("#sms").value.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  const log = []; HELD = [];
+  lines.forEach(line => {
+    const mm = line.toUpperCase().match(/^(PHC-\d{3})\b(.*)$/);
+    if (!mm || !PHC_BY_ID[mm[1]]) { log.push(`✗ "${line}": unknown PHC ID. Reply sent asking the pharmacist to resend.`); return; }
+    const p = PHC_BY_ID[mm[1]], rest = mm[2], changes = [];
+    const re = /\b([A-Z]{3})\s+(\d+)\b/g; let x;
+    while ((x = re.exec(rest))) {
+      const m = MED_BY_ID[x[1]]; if (!m) continue;
+      const q = +x[2], e = EVAL_OF.get(p.id + m.id);
+      // plausibility: a jump of more than 60 days of demand with no delivery on record is held for confirmation
+      if (q > e.stock + 60 * Math.max(e.daily, 0.5) && q > 3 * Math.max(1, e.stock)) { HELD.push({ p, m, q }); log.push(`⚠ ${p.id} ${m.id}=${q} held: ${fmt(q / Math.max(1, e.stock), 0)}× the expected ${fmt(e.stock)} and no delivery recorded. Confirmation SMS sent.`); continue; }
+      setStock(p, m, q, 0); changes.push(`${m.id}=${q}`);
+    }
+    const b = rest.match(/BEDS\s+(\d+)\s*\/\s*(\d+)/);
+    if (b) { p.beds = +b[2]; p.occupied = Math.min(+b[1], p.beds); p.lastReport = 0; changes.push(`beds ${p.occupied}/${p.beds}`); }
+    if (changes.length) log.push(`✓ ${p.id} ${p.name}: ${changes.join(", ")}`);
+  });
+  $("#ingest-log").innerHTML = esc(log.join("\n")) + (HELD.length ? `\n<button class="btn" id="accept-held">Accept held values</button>` : "");
+  const acc = $("#accept-held");
+  if (acc) acc.addEventListener("click", () => { HELD.forEach(h => setStock(h.p, h.m, h.q, 0)); toast(`${HELD.length} held value${HELD.length > 1 ? "s" : ""} accepted`); HELD = []; acc.remove(); refresh(); });
+  refresh();
+  toast(`${lines.length} report${lines.length === 1 ? "" : "s"} processed. Forecasts updated.`);
+}
+
+// ================= wiring =================
+let view = "overview";
+const VIEWS = ["overview", "surveillance", "stock", "expiry", "redistribute", "capacity", "quality", "federated", "brief"];
+function refresh() {
+  recompute(); planTransfers();
+  ({ overview: renderOverview, surveillance: renderSurveillance, stock: renderStock, expiry: renderExpiry, redistribute: renderRedistribute, capacity: renderCapacity, quality: renderQuality, federated: () => { if (!fedDone) runFederated(); }, brief: genBrief })[view]();
+}
+function show(v) {
+  view = v;
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === v));
+  document.querySelectorAll("section.view").forEach(s => s.hidden = s.id !== "v-" + v);
+  refresh();
+  try { history.replaceState(null, "", "#" + v); } catch (e) {}
+}
+DISTRICTS.forEach(d => $("#district").insertAdjacentHTML("beforeend", `<option value="${d.id}">${d.name}</option>`));
+MEDS.forEach(m => $("#med-filter").insertAdjacentHTML("beforeend", `<option value="${m.id}">${m.name}</option>`));
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => show(t.dataset.view)));
+$("#scenario").addEventListener("change", e => { setScenario(e.target.value, null, "manual"); approved = false; refresh(); });
+$("#district").addEventListener("change", e => { districtFilter = e.target.value; refresh(); });
+$("#med-filter").addEventListener("change", renderStock);
+$("#status-filter").addEventListener("change", renderStock);
+$("#ref-from").addEventListener("change", renderReferral);
+$("#ingest").addEventListener("click", ingest);
+$("#run-fed").addEventListener("click", runFederated);
+$("#gen-brief").addEventListener("click", genBrief);
+$("#lang").addEventListener("change", genBrief);
+$("#copy-brief").addEventListener("click", () => copyText($("#brief-out").textContent, "Brief copied"));
+$("#approve-all").addEventListener("click", () => { approved = true; renderRedistribute(); toast(`${TRANSFERS.length} transfer orders approved and sent to PHC pharmacists`); });
+$("#copy-csv").addEventListener("click", () => {
+  const csv = ["type,medicine,from_phc,to_phc,qty,unit,road_km,eta_hours,lot", ...TRANSFERS.map(t => [t.type, `"${t.m.name}"`, t.from.id, t.to.id, t.qty, t.m.unit, Math.round(t.km), t.eta.toFixed(1), t.lot ? t.lot.lot : ""].join(","))].join("\n");
+  copyText(csv, `${TRANSFERS.length} orders copied as CSV`);
+});
+$("#csv-file").addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { $("#csv-text").value = r.result; $("#csv-log").textContent = importCsv(r.result); }; r.readAsText(f); });
+$("#csv-import").addEventListener("click", () => { $("#csv-log").textContent = importCsv($("#csv-text").value); });
+$("#csv-copy").addEventListener("click", () => copyText(ledgerCsv(), `${EVALS.length} ledger rows copied`));
+$("#csv-download").addEventListener("click", () => {
+  try { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([ledgerCsv()], { type: "text/csv" })); a.download = "aushadh-grid-ledger.csv"; document.body.appendChild(a); a.click(); a.remove(); toast("Ledger downloaded"); } catch (e) { toast("Download blocked here. Use Copy instead."); }
+});
+try { const k = localStorage.getItem("ag-gkey"); if (k) $("#gkey").value = k; } catch (e) {}
+// embedded previews cannot save files; offer Copy only there
+try { if (window.self !== window.top) $("#csv-download").hidden = true; } catch (e) { $("#csv-download").hidden = true; }
+const rerender = () => { chartDefaults(); if (view === "federated") runFederated(); else refresh(); };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", rerender);
+new MutationObserver(rerender).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+chartDefaults();
+setScenario("normal", null, "manual");
+const start = (location.hash || "").slice(1);
+show(VIEWS.includes(start) ? start : "overview");
+})();
+</script>
+
+</body>
+</html>
