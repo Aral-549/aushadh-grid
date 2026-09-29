@@ -48,3 +48,17 @@ resolved — it's just hidden until the next rewrite.
 - **Regression case added:** `tests/golden/forecast_cases.js` — cases `F1-chosen-on-selection-window`, `F2-holdout-honest`, `F3-constant-no-drift`, `edge-beta0-flat`; `tests/golden/engine_baseline.json` regenerated with human approval (previous values kept in the file)
 - **Fix:** alpha 0.05, beta 0, chosen by `tools/tune_forecast.py` on days 92-105. Untouched holdout: 18.86% vs 21.31% for the 28-day average; lines with recent stock-outs 19.7% vs 24.3%.
 - **Status:** fixed
+
+## 2026-09-29 — Template placeholder shown in the cluster table header
+- **Symptom:** The Resilience tab's cluster table header read "Hub buffer for ${TARGET_TXT} in any emergency".
+- **Root cause:** A JavaScript template expression was written into static HTML markup, where it is never evaluated.
+- **Stage/module:** Presentation layer, Resilience markup (`src/app.html`)
+- **Regression case added:** `tests/golden/resilience_cases.js` — case `regression-no-template-leaks` (no view may show `${`, `undefined` or `NaN`)
+- **Status:** fixed
+
+## 2026-09-29 — "If a acute diarrhoeal outbreak" in the resilience summary
+- **Symptom:** The stress-test summary used "a" before scenario names that start with a vowel.
+- **Root cause:** Hard-coded article in the sentence template.
+- **Stage/module:** Presentation layer, `renderResilience`
+- **Regression case added:** `tests/golden/resilience_cases.js` — case `ui-lede-article`
+- **Status:** fixed

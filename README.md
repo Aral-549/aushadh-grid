@@ -20,6 +20,7 @@ Live prototype: **https://aral-549.github.io/aushadh-grid/** (a 6-step guided to
 | View | What it shows |
 | --- | --- |
 | **Overview** | Headline numbers, outbreak signal banner, geographic risk map of 48 PHCs across 12 districts, early warnings (vital medicines first), and SMS/WhatsApp report intake. |
+| **Resilience** | Stress test: every district is hit by a dengue, diarrhoea or heatwave surge for 14 days with supply lines cut, starting from today's stock. Four layers: today (state average of each district's worst case: 84%), pre-positioning spare stock in calm times (86%), each district run as one shared shelf through a hub (88%, with 49% less safety stock for the same availability), and a priced hub buffer that lifts every district above 90% in any emergency (97.5% for Rs 1.96 lakh). |
 | **Outbreak signals** | Syndromic OPD surveillance (fever, diarrhoea, heat illness) for every district, using the CDC EARS C2 method. One click applies outbreak demand to the forecasts of exactly the affected districts. |
 | **Stock & forecast** | 528 medicine lines (48 PHCs × 11 essential medicines). Each has a 14-day demand forecast with an 80% band, days of cover, and stock-out probability within the resupply lead time. The chart marks stock-out days and entry errors that were corrected before fitting. |
 | **Expiry & wastage** | First-expiry-first-out simulation of every lot against its PHC's own forecast. It shows which lots will expire unused, their ₹ value, and where to send them so they are used in time. |
@@ -31,6 +32,15 @@ Live prototype: **https://aral-549.github.io/aushadh-grid/** (a 6-step guided to
 | **Data quality** | Overdue reports (today's stock is estimated for these), automatic history corrections, and CSV import/export of the stock ledger, so a real district can load its own data. |
 | **BRICS federated model** | FedAvg training across six national nodes. Only weights are shared. Nodes with little data and little outbreak history cut forecast error by about 30%. |
 | **AI situation brief** | A Gemini-written brief for the District Health Officer in any language, grounded only in the live dashboard state shown on screen. Offline template fallback in English, Hindi and Portuguese. |
+
+## Changing the paradigm: prepare, don't react
+
+Most supply dashboards answer "what runs out this week?". Aushadh Grid also answers "if an outbreak hit this district tomorrow, how much of the demand for vital medicines could its PHCs still meet, and what do we put in place now?". Preparedness becomes a number a state can track and budget for, and BRICS partners can compare.
+
+1. **Stress test.** For each district and each emergency, demand for the medicines it drives ramps up over 3 days (the same multipliers the forecast uses) and runs for 14 days with no routine resupply. Resilience is the share of that demand the district's PHCs can meet, averaged over vital and outbreak medicines.
+2. **Pre-positioning.** Spare stock moves in calm times to the weakest district and emergency first, within 150 km. A donor gives only what it would not need in its own worst emergency, so no PHC becomes less prepared (checked for every line in every scenario).
+3. **Shared cluster shelves.** The PHCs of a district act as one virtual shelf around a hub with a working fridge, so a surge at one PHC is covered by quiet shelves nearby. Safety stock follows the square-root law: the same 95% availability needs about half the stock.
+4. **Resilience budget.** Where even a shared shelf falls short, the hub holds a buffer sized so every vital and outbreak medicine meets 90% of surge demand in any emergency. Hubs issue it oldest-first into routine use, so it rotates instead of expiring.
 
 ## How the AI works
 

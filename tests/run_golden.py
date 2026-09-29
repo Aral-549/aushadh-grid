@@ -38,6 +38,7 @@ RUNS = [
     ("stored light, OS dark", "index.html?mode=storedlight", ["--blink-settings=preferredColorScheme=0", "--window-size=1280,900"]),
     ("plan impact, runs, orders, backtest", "index.html?mode=impact", ["--window-size=1440,1000"]),
     ("forecast", "index.html?mode=forecast", ["--window-size=1440,1000"]),
+    ("resilience", "index.html?mode=resilience", ["--window-size=1440,1000"]),
     ("phone 360px", "frame360.html", ["--window-size=900,800"]),
     ("phone 390px", "frame390.html", ["--window-size=900,800"]),
 ]
@@ -51,7 +52,7 @@ def main():
         shutil.copytree(os.path.join(ROOT, "vendor"), os.path.join(work, "vendor"))
         page = open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
         base = json.load(open(os.path.join(ROOT, "tests/golden/engine_baseline.json"), encoding="utf-8"))
-        cases = "\n".join(open(os.path.join(ROOT, "tests/golden", f), encoding="utf-8").read() for f in ("ui_cases.js", "impact_cases.js", "forecast_cases.js"))
+        cases = "\n".join(open(os.path.join(ROOT, "tests/golden", f), encoding="utf-8").read() for f in ("ui_cases.js", "impact_cases.js", "forecast_cases.js", "resilience_cases.js"))
         page = page.replace("<head>\n", "<head>\n" + PRE % json.dumps(base), 1)
         page = page.replace("</body>", "<script>\n" + cases + "\n</script>\n</body>", 1)
         open(os.path.join(work, "index.html"), "w", encoding="utf-8").write(page)

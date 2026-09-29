@@ -42,7 +42,7 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
   <div class="mark">औ</div>
   <span class="eyebrow">Track 3 · Smart Health &amp; Supply Chain Resilience</span>
   <h1>Aushadh <span>Grid</span></h1>
-  <p style="font-size:26px;max-width:42ch">Federated AI for PHC medicine supply chains. It spots outbreaks early, forecasts demand from messy real-world data, and moves stock between centres before anyone runs out or throws medicine away.</p>
+  <p style="font-size:26px;max-width:42ch">Federated AI for PHC medicine supply chains. It stress-tests every district against the next outbreak and prepares it in calm times, spots outbreaks early, and moves stock between centres before anyone runs out or throws medicine away.</p>
   <div class="foot" style="color:#9bb7b8"><span>Build with AI: Code for Communities · Second Edition</span><span>BRICS theme: Resilience</span></div>
 </section>
 
@@ -71,6 +71,7 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
       <li><b>Expiry simulation</b> of every lot, first-expiry-first-out</li>
       <li><b>Transfer orders</b> that prevent stock-outs and rescue expiring stock, cold-chain aware</li>
       <li><b>SMS both ways</b>: stock reports in with typo checks, work orders out to every pharmacist</li>
+      <li><b>Resilience stress test</b>: every district against the next outbreak, prepared in calm times</li>
       <li><b>Proof and logistics</b>: stock-out days with vs without the plan, and transfers grouped into vehicle runs</li>
       <li><b>Referral finder</b>, federated BRICS model and Gemini briefs in any language</li>
     </ul>
@@ -150,6 +151,26 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
 </section>
 
 <section class="s">
+  <span class="eyebrow">5 · Prepare: a new question for the state</span>
+  <h2>If an outbreak hit tomorrow, could each district cope?</h2>
+  <div class="cols">
+    <img class="shot" src="img/resilience.jpg" alt="Resilience stress test">
+    <div class="stack">
+      <div class="kpis">
+        <div class="card"><span>State resilience, worst emergency</span><div class="big ok" style="font-size:40px;white-space:nowrap">84% → 98%</div><span>demand met today → prepared</span></div>
+        <div class="card"><span>Resilience budget</span><div class="big ok" style="font-size:46px">₹1.96 lakh</div><span>hub buffers: every district above 90% in any emergency</span></div>
+      </div>
+      <ul style="font-size:17px">
+        <li>Every district x 3 emergencies, 14 days, supply cut</li>
+        <li>Spare stock moves in calm times; no donor loses out</li>
+        <li>One shared shelf per district: 49% less safety stock</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Aushadh Grid · normal operations, synthetic pilot data</span><span>08</span></div>
+</section>
+
+<section class="s">
   <span class="eyebrow">How the AI fits together</span>
   <h2>From a clinic register and a pharmacist's SMS to an approved order.</h2>
   <div class="flow">
@@ -162,7 +183,7 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
     <div class="card"><b>Learn together</b><span>A federated demand model is shared across BRICS health systems. Only weights cross borders.</span></div>
     <div class="card"><b>Explain</b><span>Gemini writes a situation brief from the exact dashboard state, in Hindi, Telugu, Portuguese, Russian or Chinese. The input JSON is shown on screen.</span></div>
   </div>
-  <div class="foot"><span>Aushadh Grid</span><span>08</span></div>
+  <div class="foot"><span>Aushadh Grid</span><span>09</span></div>
 </section>
 
 <section class="s">
@@ -181,7 +202,7 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
       <p class="muted" style="font-size:17px">Small systems that have rarely seen an outbreak learn outbreak demand from their partners. 14 KB of weights are shared and 0 raw records move.</p>
     </div>
   </div>
-  <div class="foot"><span>Aushadh Grid</span><span>09</span></div>
+  <div class="foot"><span>Aushadh Grid</span><span>10</span></div>
 </section>
 
 <section class="s">
@@ -191,7 +212,7 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
     <img class="shot" src="img/capacity.jpg" alt="Referral finder">
     <img class="shot" src="img/brief.jpg" alt="AI brief">
   </div>
-  <div class="foot"><span>Aushadh Grid</span><span>10</span></div>
+  <div class="foot"><span>Aushadh Grid</span><span>11</span></div>
 </section>
 
 <section class="s">
@@ -202,7 +223,7 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
     <div class="card"><b>Production path</b><span>• Cloud Run API, AlloyDB / Firestore lot ledger, BigQuery history<br>• Vertex AI forecasting and Gemini<br>• Pub/Sub webhooks for SMS, WhatsApp and IVR<br>• Flower or TensorFlow Federated for cross-border training<br>• Integrations: state drug systems (DVDMS / eAushadhi), IDSP/IHIP surveillance, ABDM facility registry</span></div>
   </div>
   <p><b>Impact:</b> fewer patients turned away, less medicine thrown away, outbreak stock in place days earlier, and a shared model that makes every partner's forecasts better.</p>
-  <div class="foot"><span>Aushadh Grid</span><span>11</span></div>
+  <div class="foot"><span>Aushadh Grid</span><span>12</span></div>
 </section>
 
 </body></html>

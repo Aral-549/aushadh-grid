@@ -71,5 +71,5 @@ of them. Today's plan, tiles and `tests/golden/engine_baseline.json` stay identi
 ## Status
 - [x] Drafted
 - [x] Reviewed by a human (direction approved 2026-09-29: "1 and 2 together"; behaviour cases not reviewed line by line)
-- [ ] Implementation matches this contract
-- [ ] Golden tests exist for every behavior case above
+- [x] Implementation matches this contract
+- [x] Golden tests exist for every behavior case above (`tests/golden/resilience_cases.js`, mutation-checked; R3 covered by the no-NaN and range checks)

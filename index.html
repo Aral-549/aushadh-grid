@@ -1138,7 +1138,7 @@ function stressTest() {
     return { d: d.id, hub, spokes: phcs.filter(p => p !== hub), maxKm: Math.max(0, ...phcs.map(p => haversine(p, hub) * ROAD)), ssIndep, ssPooled, items, value: items.reduce((a, x) => a + x.value, 0) };
   });
   const budget = clusters.reduce((a, c) => a + c.value, 0);
-  return { pairs, moves, clusters, state, weakest, spare0, given, worstOf: worst, budget, bufOf };
+  return { pairs, moves, clusters, state, weakest, spare0, given, worstOf: worst, budget, bufOf, startBase: base, startNow: now };
 }
 const RES_THRESH = r => r < 0.6 ? "crit" : r < 0.85 ? "warn" : "ok";
 
