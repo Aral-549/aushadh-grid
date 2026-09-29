@@ -232,6 +232,15 @@ td.route { min-width: 260px; line-height: 1.7; }
 td.sms { font-family: var(--font-data); font-size: 0.74rem; min-width: 300px; max-width: 520px; }
 td.sms div + div { margin-top: 4px; }
 
+/* ---------- resilience ---------- */
+.rs-cell { display: inline-block; min-width: 58px; text-align: center; padding: 2px 8px; border-radius: 6px; font-family: var(--font-data); font-size: 0.78rem; font-weight: 600; }
+.rs-cell.crit { background: var(--crit-bg); color: var(--crit); }
+.rs-cell.warn { background: var(--warn-bg); color: var(--warn); }
+.rs-cell.ok { background: var(--ok-bg); color: var(--ok); }
+.rs-steps { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rs-lede { font-size: 0.95rem; max-width: 95ch; }
+.rs-lede b { font-family: var(--font-display); font-size: 1.15rem; letter-spacing: 0.01em; }
+
 /* ---------- guided tour ---------- */
 .tour { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 40; width: min(380px, calc(100vw - 32px)); background: var(--band); border: 1px solid var(--band-line); border-radius: var(--r); box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.65); overflow: hidden; }
 .tour-bar { height: 3px; background: var(--band-line); }
@@ -276,6 +285,7 @@ td.sms div + div { margin-top: 4px; }
   </div>
   <nav class="tabs" role="tablist" aria-label="Views">
     <button class="tab" role="tab" data-view="overview" aria-selected="true">Overview</button>
+    <button class="tab" role="tab" data-view="resilience" aria-selected="false">Resilience</button>
     <button class="tab" role="tab" data-view="surveillance" aria-selected="false">Outbreak signals</button>
     <button class="tab" role="tab" data-view="stock" aria-selected="false">Stock &amp; forecast</button>
     <button class="tab" role="tab" data-view="expiry" aria-selected="false">Expiry &amp; wastage</button>
@@ -294,7 +304,7 @@ td.sms div + div { margin-top: 4px; }
       <p class="eyebrow" id="hero-meta"></p>
       <h2 class="headline" id="headline"></h2>
       <p class="lede" id="lede"></p>
-      <div class="hero-cta"><button class="btn primary big" id="cta-transfers" type="button">Review transfers</button><button class="btn big" id="cta-tour" type="button">Take the 60-second tour</button></div>
+      <div class="hero-cta"><button class="btn primary big" id="cta-transfers" type="button">Review transfers</button><button class="btn big" id="cta-stress" type="button">Stress-test the network</button><button class="btn big" id="cta-tour" type="button">Take the 60-second tour</button></div>
       <div id="signal-slot"></div>
     </div>
     <div class="map">
@@ -339,6 +349,36 @@ PHC-029 STOCK ORS 2640</textarea>
         <div class="panel-h"><h2>How to read this console</h2></div>
         <p class="hint">Every number comes from the same pipeline: clinic visit counts are screened for outbreaks, each PHC's stock history is cleaned, demand is forecast 14 days ahead, and a transfer planner moves stock before it runs out or expires. Change the <b>Demand scenario</b> or <b>District</b> at the top and every view recalculates. Click any PHC on the map to open its forecast.</p>
       </div>
+    </div>
+  </section>
+
+  <!-- RESILIENCE -->
+  <section class="view" id="v-resilience" hidden>
+    <div class="panel">
+      <div class="panel-h"><h2>If an emergency hit tomorrow</h2><p>Stress test: each district is hit by each emergency in turn, for 14 days, with supply lines cut</p></div>
+      <p class="rs-lede" id="rs-lede"></p>
+      <div class="tiles" id="rs-tiles"></div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <div class="panel-h"><h2>Stress-test matrix</h2><p>Share of demand for vital and outbreak medicines that the district's PHCs could still meet</p></div>
+        <div class="tbl-wrap"><table><thead><tr><th>District</th><th class="n">Dengue</th><th class="n">Diarrhoea</th><th class="n">Heatwave</th><th>Worst case: today → pre-positioned → shared shelf → hub buffer</th></tr></thead><tbody id="rs-body"></tbody></table></div>
+        <p class="hint">Starts from today's stock after today's transfers. Demand for the medicines each emergency drives rises to its peak over 3 days, the same ramp the forecast uses. Unmet demand is lost, because patients go without. Red is under 60%, amber under 85%.</p>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h2>Worst case by district</h2><p>Each layer adds to the one before</p></div>
+        <div class="chart-box tall"><canvas id="c-resil"></canvas></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h2>Pre-positioning orders</h2><div class="row"><button class="btn" id="copy-prepos" type="button">Copy as CSV</button></div></div>
+      <p class="hint">Moved in calm times, before any alert, so the stock is on the shelf when the surge starts. The weakest district and scenario are served first. A donor gives only what it would not need in its own worst emergency, so no donor becomes less prepared. Moves stay within 150 road km, and cold-chain items only move between working fridges.</p>
+      <div class="tbl-wrap"><table><thead><tr><th>Prepares for</th><th>Medicine</th><th>From</th><th>To</th><th class="n">Qty</th><th class="n">Distance</th><th>Demand met in that emergency</th></tr></thead><tbody id="prepos-body"></tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h"><h2>Shared cluster shelves</h2><p>The PHCs of a district act as one shelf, stocked through a hub</p></div>
+      <p class="hint">Today each PHC holds its own safety stock against its own bad days. When the district's PHCs share one virtual shelf, a surge at one PHC is covered by quiet shelves nearby, delivered the same day by the district vehicle from the hub. The same availability then needs far less safety stock, because bad days rarely hit every PHC at once (square-root law, 95% service). Where even a shared shelf falls short of 90% in some emergency, the hub holds a buffer that it issues oldest-first into routine use, so the buffer rotates instead of expiring.</p>
+      <div class="tbl-wrap"><table><thead><tr><th>District</th><th>Hub PHC</th><th>Spokes</th><th class="n">Furthest spoke</th><th class="n">Safety stock, separate shelves</th><th class="n">Shared shelf</th><th class="n">Saving</th><th>Hub buffer for 90% in any emergency</th><th class="n">Value</th></tr></thead><tbody id="cluster-body"></tbody></table></div>
     </div>
   </section>
 
@@ -995,6 +1035,113 @@ function backtest() {
   return BACKTEST;
 }
 
+// ================= resilience stress test =================
+// What if an emergency hit a district tomorrow? 14 days, no routine resupply, unmet demand lost (contracts/resilience.md).
+const SURGE_DAYS = 14, STRESS = ["dengue", "diarrhoea", "heat"], PREPOS_KM = 150, PREPOS_MAX = 40, Z95 = 1.65, TARGET = 0.9;
+const surgeDemand = (p, m, sc) => { const f = BASE[p.id][m.id].f, s = m.sens[sc] || 1; return f.slice(0, SURGE_DAYS).map((v, k) => v * (1 + (s - 1) * Math.min(1, (k + 1) / 3))); };
+const critical = sc => MEDS.filter(m => m.ven === "V" || (m.sens[sc] || 1) > 1);
+// lost-sales day simulation of one shelf; returns units met and demanded
+function serve(stock, inflow, demand) {
+  let s = Math.max(0, stock), met = 0, dem = 0;
+  demand.forEach((d, k) => { for (const x of inflow) if (x.day === k) s += x.qty; const u = Math.min(s, d); s -= u; met += u; dem += d; });
+  return { met, dem };
+}
+// share of surge demand met for district d under scenario sc; `pooled` serves the district's PHCs as one shelf
+function resilienceOf(d, sc, start, pooled, buffer) {
+  const phcs = PHCS.filter(p => p.district === d), meds = critical(sc);
+  if (!meds.length) return { r: 1, byMed: [] };
+  const byMed = meds.map(m => {
+    let met = 0, dem = 0;
+    if (pooled) {
+      const demand = new Array(SURGE_DAYS).fill(0), inflow = []; let stock = 0;
+      phcs.forEach(p => { const st = start(p, m); stock += st.stock; inflow.push(...st.inflow); surgeDemand(p, m, sc).forEach((v, k) => { demand[k] += v; }); });
+      if (buffer) stock += buffer.get(m) || 0;
+      ({ met, dem } = serve(stock, inflow, demand));
+    } else phcs.forEach(p => { const st = start(p, m), r = serve(st.stock, st.inflow, surgeDemand(p, m, sc)); met += r.met; dem += r.dem; });
+    return { m, met, dem, share: dem > 1e-9 ? met / dem : 1 };
+  });
+  return { r: byMed.reduce((a, x) => a + x.share, 0) / byMed.length, byMed };
+}
+let RESIL = null;
+function stressTest() {
+  // stock at day 0 after today's plan (outgoing now, incoming on arrival), plus pre-positioned stock
+  const key = (p, m) => p.id + m.id, flows = new Map(), extra = new Map(), given = new Map();
+  const at = k => flows.get(k) || flows.set(k, { in: [], out: 0 }).get(k);
+  TRANSFERS.forEach(t => { at(key(t.to, t.m)).in.push({ day: Math.ceil(t.eta / 24), qty: t.qty }); at(key(t.from, t.m)).out += t.qty; });
+  const base = (p, m) => { const f = flows.get(key(p, m)) || { in: [], out: 0 }; return { stock: Math.max(0, EVAL_OF.get(key(p, m)).stock - f.out), inflow: f.in }; };
+  const now = (p, m) => { const b = base(p, m); return { stock: b.stock + (extra.get(key(p, m)) || 0) - (given.get(key(p, m)) || 0), inflow: b.inflow }; };
+  const worstNeed = (p, m) => Math.max(...STRESS.map(sc => surgeDemand(p, m, sc).reduce((a, v) => a + v, 0)));
+  const spare0 = new Map();
+  PHCS.forEach(p => MEDS.forEach(m => spare0.set(key(p, m), Math.max(0, Math.floor(base(p, m).stock - worstNeed(p, m))))));
+  const today = new Map();
+  DISTRICTS.forEach(d => STRESS.forEach(sc => today.set(d.id + sc, resilienceOf(d.id, sc, base, false).r)));
+
+  // pre-positioning: raise the weakest (district, scenario) first
+  const moves = [], exhausted = new Set(), cur = new Map(today);
+  while (moves.length < PREPOS_MAX) {
+    const pairs = DISTRICTS.flatMap(d => STRESS.map(sc => ({ d: d.id, sc, r: cur.get(d.id + sc) }))).filter(x => !exhausted.has(x.d + x.sc) && x.r < 0.999).sort((a, b) => a.r - b.r);
+    if (!pairs.length) break;
+    const pr = pairs[0], phcs = PHCS.filter(p => p.district === pr.d);
+    const res = resilienceOf(pr.d, pr.sc, now, false);
+    const cands = [];
+    res.byMed.filter(x => x.share < 0.999).sort((a, b) => a.share - b.share).forEach(({ m }) => phcs.forEach(p => {
+      const st = now(p, m), r = serve(st.stock, st.inflow, surgeDemand(p, m, pr.sc));
+      if (r.dem - r.met > 1e-6) cands.push({ p, m, unmet: r.dem - r.met, day1: surgeDemand(p, m, pr.sc)[0] });
+    }));
+    let moved = null;
+    for (const c of cands) {
+      if (c.m.cold && !c.p.ilrOk) continue;
+      const donors = PHCS.filter(q => q !== c.p && (!c.m.cold || q.ilrOk))
+        .map(q => ({ q, km: haversine(q, c.p) * ROAD, spare: spare0.get(key(q, c.m)) - (given.get(key(q, c.m)) || 0) }))
+        .filter(x => x.km <= PREPOS_KM && x.spare >= 1).sort((a, b) => a.km - b.km);
+      for (const dn of donors) {
+        const qty = Math.min(dn.spare, Math.ceil(c.unmet));
+        if (qty < Math.max(1, c.day1)) continue;
+        const before = res.byMed.find(x => x.m === c.m).share;
+        given.set(key(dn.q, c.m), (given.get(key(dn.q, c.m)) || 0) + qty);
+        extra.set(key(c.p, c.m), (extra.get(key(c.p, c.m)) || 0) + qty);
+        const after = resilienceOf(pr.d, pr.sc, now, false).byMed.find(x => x.m === c.m).share;
+        moved = { d: pr.d, s: pr.sc, m: c.m, from: dn.q, to: c.p, qty, km: dn.km, before, after };
+        break;
+      }
+      if (moved) break;
+    }
+    if (!moved) { exhausted.add(pr.d + pr.sc); continue; }
+    moves.push(moved);
+    // a move changes stock in the receiver's and the donor's districts
+    new Set([moved.to.district, moved.from.district]).forEach(d => STRESS.forEach(sc => cur.set(d + sc, resilienceOf(d, sc, now, false).r)));
+  }
+  // hub buffers: the extra stock each hub holds so every critical medicine meets TARGET of surge demand in every scenario
+  const bufOf = new Map();
+  DISTRICTS.forEach(d => {
+    const need = new Map();
+    STRESS.forEach(sc => resilienceOf(d.id, sc, now, true).byMed.forEach(x => need.set(x.m, Math.max(need.get(x.m) || 0, Math.ceil(Math.max(0, TARGET * x.dem - x.met) - 1e-9)))));
+    bufOf.set(d.id, need);
+  });
+  const pairs = DISTRICTS.flatMap(d => STRESS.map(sc => ({ d: d.id, s: sc, today: today.get(d.id + sc), prepos: cur.get(d.id + sc), shared: resilienceOf(d.id, sc, now, true).r, buffered: resilienceOf(d.id, sc, now, true, bufOf.get(d.id)).r })));
+  const worst = (d, layer) => Math.min(...pairs.filter(x => x.d === d).map(x => x[layer]));
+  const state = {};
+  ["today", "prepos", "shared", "buffered"].forEach(l => { state[l] = DISTRICTS.reduce((a, d) => a + worst(d.id, l), 0) / DISTRICTS.length; });
+  const weakest = pairs.slice().sort((a, b) => a.today - b.today)[0];
+
+  // shared cluster shelves: hub = PHC with a working fridge nearest the district centre
+  const clusters = DISTRICTS.map(d => {
+    const phcs = PHCS.filter(p => p.district === d.id), pool = phcs.filter(p => p.ilrOk).length ? phcs.filter(p => p.ilrOk) : phcs;
+    const hub = pool.slice().sort((a, b) => haversine(a, d) - haversine(b, d))[0];
+    let ssIndep = 0, ssPooled = 0;
+    MEDS.forEach(m => {
+      const sds = phcs.map(p => BASE[p.id][m.id].sd), rootL = Math.sqrt(m.lead);
+      ssIndep += sds.reduce((a, v) => a + Z95 * v * rootL, 0) * m.price;
+      ssPooled += Z95 * Math.sqrt(sds.reduce((a, v) => a + v * v, 0)) * rootL * m.price;
+    });
+    const items = [...bufOf.get(d.id)].filter(([, q]) => q > 0).map(([m, qty]) => ({ m, qty, value: qty * m.price }));
+    return { d: d.id, hub, spokes: phcs.filter(p => p !== hub), maxKm: Math.max(0, ...phcs.map(p => haversine(p, hub) * ROAD)), ssIndep, ssPooled, items, value: items.reduce((a, x) => a + x.value, 0) };
+  });
+  const budget = clusters.reduce((a, c) => a + c.value, 0);
+  return { pairs, moves, clusters, state, weakest, spare0, given, worstOf: worst, budget, bufOf };
+}
+const RES_THRESH = r => r < 0.6 ? "crit" : r < 0.85 ? "warn" : "ok";
+
 // runs the planning stages after the transfer planner and logs each boundary
 function planDownstream() {
   logStage("plan", { lines: EVALS.length, scenario, districts: [...activeDistricts] }, { transfers: TRANSFERS.length, indents: INDENTS.length });
@@ -1004,6 +1151,8 @@ function planDownstream() {
   logStage("runs", { transfers: TRANSFERS.length }, { runs: RUNS.length, runKm: Math.round(RUNS.reduce((a, r) => a + r.km, 0)), over: RUNS.filter(r => r.over).length });
   ORDERS = workOrders();
   logStage("orders", { transfers: TRANSFERS.length, indents: INDENTS.length }, { phcs: ORDERS.length, sms: ORDERS.reduce((a, o) => a + o.sms.length, 0), verify: ORDERS.filter(o => o.verify).length });
+  RESIL = stressTest();
+  logStage("resilience", { districts: DISTRICTS.length, scenarios: STRESS, transfers: TRANSFERS.length }, { state: RESIL.state, moves: RESIL.moves.length, weakest: RESIL.weakest && `${RESIL.weakest.d}/${RESIL.weakest.s}` });
 }
 
 // ================= helpers =================
@@ -1166,6 +1315,34 @@ function renderImpact(imp) {
     { label: "If nothing is done", data: ds.map(d => +IMPACT.byDistrict[d.id].none.outDays.toFixed(1)), backgroundColor: css("--crit"), borderRadius: 3 },
     { label: "With the transfer plan", data: ds.map(d => +IMPACT.byDistrict[d.id].plan.outDays.toFixed(1)), backgroundColor: css("--ok"), borderRadius: 3 },
   ] }, options: { scales: { x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 45 } }, y: { beginAtZero: true, title: { display: true, text: "stock-out days" }, grid: { color: css("--line") } } }, plugins: { legend: { position: "bottom" } } } });
+}
+
+// ================= resilience =================
+function renderResilience() {
+  const R = RESIL, pct = r => `${fmt(r * 100)}%`, cell = r => `<span class="rs-cell ${RES_THRESH(r)}">${pct(r)}</span>`;
+  const ds = DISTRICTS.filter(d => districtFilter === "all" || d.id === districtFilter);
+  const w = R.weakest, wd = DIST_BY_ID[w.d].name, ws = SCENARIOS[w.s].name.toLowerCase();
+  const wp = R.pairs.find(x => x.d === w.d && x.s === w.s);
+  $("#rs-lede").innerHTML = `If ${/^[aeiou]/i.test(ws) ? "an" : "a"} <b>${esc(ws)}</b> hit <b>${esc(wd)}</b> tomorrow, its PHCs could meet only <b>${pct(w.today)}</b> of the demand for vital and outbreak medicines over the next two weeks. Moving spare stock there now raises that to <b>${pct(wp.prepos)}</b>, running the district as one shared shelf raises it to <b>${pct(wp.shared)}</b>, and a hub buffer worth <b>${inr(R.clusters.find(c => c.d === w.d).value)}</b> takes it to <b>${pct(wp.buffered)}</b>. For every district and every emergency to reach ${fmt(TARGET * 100)}%, the state needs <b>${inr(R.budget)}</b> of buffer stock at ${R.clusters.filter(c => c.value > 0).length} hubs.`;
+  const saved = R.clusters.reduce((a, c) => a + c.ssIndep - c.ssPooled, 0), ssAll = R.clusters.reduce((a, c) => a + c.ssIndep, 0);
+  tiles("#rs-tiles", [
+    { k: "State resilience today", v: pct(R.state.today), s: "Average of each district's worst emergency", c: RES_THRESH(R.state.today) === "ok" ? "good" : RES_THRESH(R.state.today) },
+    { k: "After pre-positioning", v: pct(R.state.prepos), s: `${R.moves.length} moves in calm times, no donor worse off`, c: RES_THRESH(R.state.prepos) === "ok" ? "good" : RES_THRESH(R.state.prepos) },
+    { k: "With shared cluster shelves", v: pct(R.state.shared), s: "Each district's PHCs share one shelf through a hub", c: RES_THRESH(R.state.shared) === "ok" ? "good" : RES_THRESH(R.state.shared) },
+    { k: "Resilience budget", v: inr(R.budget), s: `Hub buffers so every district meets ${fmt(TARGET * 100)}% in any emergency (state: ${pct(R.state.buffered)})`, c: "good" },
+    { k: "Safety stock needed", v: `−${fmt(ssAll ? saved / ssAll * 100 : 0)}%`, s: `${inr(saved)} less for the same 95% availability`, c: "good" },
+  ]);
+  const pairOf = (d, sc) => R.pairs.find(x => x.d === d && x.s === sc);
+  $("#rs-body").innerHTML = ds.map(d => `<tr><td>${esc(d.name)}</td>${STRESS.map(sc => `<td class="n">${cell(pairOf(d.id, sc).today)}</td>`).join("")}<td><span class="rs-steps">${cell(R.worstOf(d.id, "today"))}<span class="arrow">→</span>${cell(R.worstOf(d.id, "prepos"))}<span class="arrow">→</span>${cell(R.worstOf(d.id, "shared"))}<span class="arrow">→</span>${cell(R.worstOf(d.id, "buffered"))}</span></td></tr>`).join("");
+  chart("c-resil", { type: "bar", data: { labels: ds.map(d => d.name), datasets: [
+    { label: "Today", data: ds.map(d => +(R.worstOf(d.id, "today") * 100).toFixed(1)), backgroundColor: css("--crit"), borderRadius: 3 },
+    { label: "After pre-positioning", data: ds.map(d => +(R.worstOf(d.id, "prepos") * 100).toFixed(1)), backgroundColor: css("--warn"), borderRadius: 3 },
+    { label: "With a shared cluster shelf", data: ds.map(d => +(R.worstOf(d.id, "shared") * 100).toFixed(1)), backgroundColor: css("--surplus"), borderRadius: 3 },
+    { label: "With a hub buffer", data: ds.map(d => +(R.worstOf(d.id, "buffered") * 100).toFixed(1)), backgroundColor: css("--ok"), borderRadius: 3 },
+  ] }, options: { scales: { x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 45 } }, y: { min: 0, max: 100, title: { display: true, text: "% of surge demand met" }, grid: { color: css("--line") } } }, plugins: { legend: { position: "bottom" } } } });
+  const mv = R.moves.filter(x => inDistrict(x.to) || inDistrict(x.from));
+  $("#prepos-body").innerHTML = mv.map(x => `<tr><td>${esc(SCENARIOS[x.s].name)} in ${esc(DIST_BY_ID[x.d].name)}</td><td>${esc(x.m.name)}${venTag(x.m)}${coldTag(x.m)}</td><td><span class="mono">${x.from.id}</span> ${esc(x.from.name)}</td><td><span class="mono">${x.to.id}</span> ${esc(x.to.name)}</td><td class="n">${fmt(x.qty)} ${x.m.unit}</td><td class="n">${fmt(x.km)} km</td><td>${cell(x.before)}<span class="arrow">→</span>${cell(x.after)}</td></tr>`).join("") || `<tr><td colspan="7">No spare stock within reach can raise the weakest districts further.</td></tr>`;
+  $("#cluster-body").innerHTML = R.clusters.filter(c => districtFilter === "all" || c.d === districtFilter).map(c => `<tr><td>${esc(DIST_BY_ID[c.d].name)}</td><td><span class="mono">${c.hub.id}</span> ${esc(c.hub.name)}${c.hub.ilrOk ? "" : ' <span class="tag crit">no working fridge</span>'}</td><td class="mono">${c.spokes.map(p => p.id).join(", ")}</td><td class="n">${fmt(c.maxKm)} km</td><td class="n">${inr(c.ssIndep)}</td><td class="n">${inr(c.ssPooled)}</td><td class="n">${fmt(c.ssIndep ? (1 - c.ssPooled / c.ssIndep) * 100 : 0)}%</td><td>${c.items.length ? c.items.map(x => `${fmt(x.qty)} ${x.m.id}`).join(", ") : '<span class="sub">none needed</span>'}</td><td class="n">${inr(c.value)}</td></tr>`).join("");
 }
 
 // ================= dispatch =================
@@ -1576,10 +1753,10 @@ function ingest() {
 
 // ================= wiring =================
 let view = "overview";
-const VIEWS = ["overview", "surveillance", "stock", "expiry", "redistribute", "dispatch", "capacity", "quality", "federated", "brief"];
+const VIEWS = ["overview", "resilience", "surveillance", "stock", "expiry", "redistribute", "dispatch", "capacity", "quality", "federated", "brief"];
 function refresh() {
   recompute(); planTransfers(); planDownstream();
-  ({ overview: renderOverview, surveillance: renderSurveillance, stock: renderStock, expiry: renderExpiry, redistribute: renderRedistribute, dispatch: renderDispatch, capacity: renderCapacity, quality: renderQuality, federated: () => { if (!fedDone) runFederated(); }, brief: genBrief })[view]();
+  ({ overview: renderOverview, surveillance: renderSurveillance, stock: renderStock, expiry: renderExpiry, redistribute: renderRedistribute, dispatch: renderDispatch, resilience: renderResilience, capacity: renderCapacity, quality: renderQuality, federated: () => { if (!fedDone) runFederated(); }, brief: genBrief })[view]();
 }
 function show(v) {
   view = v;
@@ -1642,7 +1819,7 @@ paintThemeBtn();
 
 // ================= guided tour =================
 const TOUR = [
-  { v: "overview", t: "The network at a glance", d: "Each dot is a Primary Health Centre, coloured by how many medicines it will run out of. Moving lines are the transfers the system recommends: gold prevents a stock-out, blue rescues stock that would expire. Click a dot to open its forecast." },
+  { v: "overview", t: "The network at a glance", d: "Each dot is a Primary Health Centre, coloured by how many medicines it will run out of. Moving lines are the transfers the system recommends: gold prevents a stock-out, blue rescues stock that would expire. Click a dot to open its forecast, or stress-test the network to see how each district would cope if an outbreak started tomorrow." },
   { v: "surveillance", t: "Outbreaks, days early", d: "Clinic visit counts for fever, diarrhoea and heat illness are screened every day with the CDC EARS C2 method. An alert can switch medicine forecasts to outbreak demand for just the affected districts, before the outbreak is declared." },
   { v: "stock", t: "A forecast for every shelf", d: "All 528 medicine lines get a 14-day demand forecast with an 80% band. Blue dots mark days the PHC had run out: the model re-estimates them, so an empty shelf is not mistaken for low demand." },
   { v: "redistribute", t: "Move stock, not money", d: "Surplus goes to PHCs about to run out, and near-expiry lots go where they will be used in time. Vaccines and insulin travel only between working fridges. What no neighbour can cover becomes a warehouse order. The Dispatch tab then groups the transfers into vehicle runs and writes an SMS for every pharmacist." },
@@ -1677,6 +1854,11 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#tour"
 $("#tour-open").addEventListener("click", () => tourOpen(true));
 $("#cta-tour").addEventListener("click", () => tourOpen(true));
 $("#cta-transfers").addEventListener("click", () => { show("redistribute"); scrollTo({ top: 0 }); });
+$("#cta-stress").addEventListener("click", () => { show("resilience"); scrollTo({ top: 0 }); });
+$("#copy-prepos").addEventListener("click", () => {
+  const mv = RESIL.moves.filter(x => inDistrict(x.to) || inDistrict(x.from));
+  copyText(["prepares_for,district,medicine,from_phc,to_phc,qty,unit,road_km", ...mv.map(x => [x.s, DIST_BY_ID[x.d].name, `"${x.m.name}"`, x.from.id, x.to.id, x.qty, x.m.unit, Math.round(x.km)].join(","))].join("\n"), `${mv.length} pre-positioning orders copied as CSV`);
+});
 $("#map").addEventListener("click", e => { const d = e.target.closest(".dot"); if (d) openPhc(d.dataset.phc); });
 $("#map").addEventListener("keydown", e => { const d = e.target.closest(".dot"); if (d && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openPhc(d.dataset.phc); } });
 
@@ -1689,7 +1871,7 @@ const start = (location.hash || "").slice(1);
 show(VIEWS.includes(start) ? start : "overview");
 // read-only hook for tests/golden (planning stages are otherwise private to this closure)
 window.__AG_TEST = Object.freeze({ baseForecast, cleanSeries, PHCS, MEDS, HIST, get ALPHA() { return ALPHA; }, get BETA() { return BETA; }, lineOut, smsFor, route, carrier, directKm, backtest, DIST_BY_ID, PHC_BY_ID, MED_BY_ID,
-  get IMPACT() { return IMPACT; }, get RUNS() { return RUNS; }, get ORDERS() { return ORDERS; }, get TRANSFERS() { return TRANSFERS; }, get INDENTS() { return INDENTS; }, get EVALS() { return EVALS; } });
+  resilienceOf, serve, surgeDemand, critical, stressTest, get RESIL() { return RESIL; }, SCENARIOS, get IMPACT() { return IMPACT; }, get RUNS() { return RUNS; }, get ORDERS() { return ORDERS; }, get TRANSFERS() { return TRANSFERS; }, get INDENTS() { return INDENTS; }, get EVALS() { return EVALS; } });
 let tourDone = false;
 try { tourDone = localStorage.getItem("ag-tour-done") === "1"; } catch (e) {}
 if (!tourDone) tourOpen(false);
