@@ -1,0 +1,7 @@
+{
+  "_note": "Overview + Transfers tile numbers captured from the pre-redesign build (191f10e) on 2026-09-29. Frontend changes must not move any of them.",
+  "normal": "48 528 51 29 7 39 136 63 73 ₹72,699 ₹1.33 lakh 6 64% 553 868 44 63 ₹72,699 73 54 km 11 ₹4,742 7",
+  "dengue": "48 528 62 36 7 50 133 69 64 ₹66,095 ₹1.25 lakh 6 64% 553 868 47 69 ₹66,095 64 68 km 21 ₹39,445 14",
+  "diarrhoea": "48 528 63 40 7 49 155 86 69 ₹69,730 ₹1.30 lakh 6 64% 553 868 53 86 ₹69,730 69 72 km 20 ₹7,553 15",
+  "heat": "48 528 58 36 7 46 138 65 73 ₹72,699 ₹1.33 lakh 6 64% 553 868 46 65 ₹72,699 73 59 km 17 ₹23,714 13"
+}

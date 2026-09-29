@@ -3,10 +3,10 @@
 | Form field | What to enter |
 | --- | --- |
 | Challenges | **Track 3 — Smart Health & Supply Chain Resilience** |
-| GitHub repository | `https://github.com/<your-username>/aushadh-grid` (must be **public**) |
+| GitHub repository | `https://github.com/Aral-549/aushadh-grid` (public) |
 | Demo video | Upload `docs/Aushadh-Grid-demo.webm` to YouTube (Unlisted) or Google Drive ("Anyone with the link"), paste the link |
 | Presentation PDF | `docs/Aushadh-Grid-deck.pdf` |
-| Working prototype link | `https://<your-username>.github.io/aushadh-grid/` after enabling GitHub Pages |
+| Working prototype link | `https://aral-549.github.io/aushadh-grid/` |
 | Brief description | Copy the text below (967 characters, limit 1024) |
 
 ## Brief description

@@ -151,6 +151,8 @@ table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
 th, td { padding: 7px 9px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
 th { position: sticky; top: 0; background: var(--sunken); font-family: var(--font-data); font-weight: 500; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); z-index: 1; }
 td.n, th.n { text-align: right; }
+/* medicine names may wrap so wide tables can still fit beside a visible scrollbar */
+#rd-body td:nth-child(2), #indent-body td:nth-child(2), #ex-body td:nth-child(2) { white-space: normal; min-width: 150px; }
 tbody tr { cursor: default; }
 tbody tr.clickable { cursor: pointer; }
 tbody tr.clickable:hover { background: var(--sunken); }
@@ -1384,7 +1386,12 @@ function tourClose() {
   $("#tour").hidden = true; tourAt = -1;
   try { localStorage.setItem("ag-tour-done", "1"); } catch (e) {}
 }
-$("#tour-next").addEventListener("click", () => { if (tourAt >= TOUR.length - 1) return tourClose(); show(TOUR[tourAt + 1].v); tourGo(tourAt + 1); scrollTo({ top: 0 }); });
+$("#tour-next").addEventListener("click", () => {
+  // opened on a deep link: show this step's own view before moving on
+  if (view !== TOUR[tourAt].v) { show(TOUR[tourAt].v); scrollTo({ top: 0 }); return; }
+  if (tourAt >= TOUR.length - 1) return tourClose();
+  show(TOUR[tourAt + 1].v); tourGo(tourAt + 1); scrollTo({ top: 0 });
+});
 $("#tour-back").addEventListener("click", () => { if (tourAt <= 0) return; show(TOUR[tourAt - 1].v); tourGo(tourAt - 1); scrollTo({ top: 0 }); });
 $("#tour-skip").addEventListener("click", tourClose);
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#tour").hidden) tourClose(); });

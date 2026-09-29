@@ -4,7 +4,7 @@
 
 Aushadh Grid ("medicine grid") is a federated AI platform for the medicine supply chain of a nation's Primary Health Centre (PHC) network. It detects outbreaks from clinic visit data, forecasts medicine demand, and warns before a stock-out. It moves stock between PHCs so that one centre's surplus covers another's shortage and near-expiry lots are used instead of thrown away. National health systems can train a shared demand model without moving patient or facility records across borders.
 
-Live prototype: open `index.html` in any browser, or visit the GitHub Pages link in the repo description.
+Live prototype: **https://aral-549.github.io/aushadh-grid/** (a 6-step guided tour opens on the first visit), or open `index.html` in any browser.
 
 ## The problem, as it looks on the ground
 
@@ -51,6 +51,8 @@ python3 -m http.server 8000   # then open http://localhost:8000
 ```
 
 To edit, change `src/app.html` and run `./build.sh` to regenerate `index.html`. The hosted build loads Chart.js from `vendor/` (MIT licence) and uses the CDN only as a fallback, so the dashboard works on poor or no connectivity.
+
+**Tests:** `python3 tests/run_golden.py` runs the golden UI cases in `tests/golden/` against the real built page in headless Chromium, including a check that no engine number changed. The UI contract is `contracts/frontend-ui.md`.
 
 **Deploy to GitHub Pages:** Settings → Pages → Source: *Deploy from a branch* → `main` / root. The app is live at `https://<user>.github.io/aushadh-grid/` within a minute.
 

@@ -27,7 +27,7 @@ forecasting, EARS C2, FedAvg), which this change must not alter.
 | 3 | Tour step 6, click Finish (or Skip at any step, or Esc) | Card closes; `ag-tour-done="1"` stored; the current view stays shown | |
 | 4 | Revisit with `ag-tour-done="1"` | No tour card; header "Tour" button is visible and reopens the tour at step 1 | |
 | 5 | `localStorage` throws | Tour shows on load and all tour controls work; nothing is persisted; no console error | |
-| 6 | Deep link `#stock` on first visit | Stock view shown; the tour card starts at step 1, and the view changes only when the user presses Next | The link target is respected until the user interacts |
+| 6 | Deep link `#stock` on first visit | Stock view shown; the tour card starts at step 1. The first Next shows step 1's own view (Overview) without advancing; the next Next goes to step 2 | The link target is respected until the user interacts (BUGLOG 2026-09-29) |
 | 7 | Click theme toggle while the OS is light and nothing is stored | `data-theme="dark"`, colours and charts switch to dark, `ag-theme="dark"` stored | Existing MutationObserver re-renders charts |
 | 8 | Reload with `ag-theme="light"` while the OS is dark | Page renders light | |
 | 9 | Hover or focus a PHC dot on the map | Tooltip shows PHC id, name, district, count of critical lines, report age | SVG `<title>` is acceptable |
@@ -53,5 +53,5 @@ forecasting, EARS C2, FedAvg), which this change must not alter.
 ## Status
 - [x] Drafted
 - [x] Reviewed by a human (approved 2026-09-29)
-- [ ] Implementation matches this contract
-- [ ] Golden tests exist for every behavior case above
+- [x] Implementation matches this contract
+- [x] Golden tests exist for every behavior case above (`tests/golden/ui_cases.js`, run with `python3 tests/run_golden.py`)
