@@ -70,7 +70,8 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
       <li><b>Forecasts that survive messy data</b>: stock-out days, typos and late reports are handled</li>
       <li><b>Expiry simulation</b> of every lot, first-expiry-first-out</li>
       <li><b>Transfer orders</b> that prevent stock-outs and rescue expiring stock, cold-chain aware</li>
-      <li><b>SMS / WhatsApp / CSV</b> intake with typo checks</li>
+      <li><b>SMS both ways</b>: stock reports in with typo checks, work orders out to every pharmacist</li>
+      <li><b>Proof and logistics</b>: stock-out days with vs without the plan, and transfers grouped into vehicle runs</li>
       <li><b>Referral finder</b>, federated BRICS model and Gemini briefs in any language</li>
     </ul>
   </div>
@@ -85,7 +86,7 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
     <div class="stack">
       <p style="font-size:18px">Daily fever, diarrhoea and heat-illness OPD counts per district are checked with the <b>CDC EARS C2</b> method. The baseline is 7 days ending 2 days back, and an alert needs 3 SD above it on 2 of the last 3 days.</p>
       <div class="card"><span>Pilot signal</span><div class="big crit">3.1×</div><span>fever visits in Srikakulam vs the 4-week baseline, 4 days above threshold. Vizianagaram alerts too; Visakhapatnam is on watch.</span></div>
-      <p class="muted" style="font-size:17px">One click applies outbreak demand to those three districts. Critical medicine lines rise from 51 to 62, and transfers are re-planned at once.</p>
+      <p class="muted" style="font-size:17px">One click applies outbreak demand to those three districts. Critical medicine lines rise from 50 to 61, and transfers are re-planned at once.</p>
     </div>
   </div>
   <div class="foot"><span>Aushadh Grid</span><span>04</span></div>
@@ -101,7 +102,7 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
         <li><b>Censored demand:</b> 3+ zero days at a PHC that normally dispenses an item are re-estimated. The pilot restores <b>298 stock-out days</b>.</li>
         <li><b>Entry errors:</b> days above 4× their local median are capped (<b>27</b> caught). SMS jumps of more than 60 days of demand are held for confirmation.</li>
         <li><b>Late reports:</b> today's stock is estimated from forecast use, and uncertainty widens with report age.</li>
-        <li><b>Forecast:</b> Holt smoothing with weekday seasonality gives a 14-day forecast, 80% band and P(stock-out) within the resupply lead time.</li>
+        <li><b>Forecast:</b> exponential smoothing with weekday seasonality, tuned on an earlier window. On a 14-day holdout it misses <b>18.9%</b> of actual use vs 21.3% for a 28-day average, and 19.7% vs 24.3% on lines that recently ran out.</li>
       </ul>
     </div>
   </div>
@@ -115,17 +116,37 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
     <img class="shot" src="img/expiry.jpg" alt="Expiry and wastage view">
     <div class="stack">
       <div class="kpis">
-        <div class="card"><span>Stock-outs averted</span><div class="big ok">47</div><span>69 transfer orders, 68 km average haul</span></div>
-        <div class="card"><span>Expiring stock rescued</span><div class="big ok">53%</div><span>₹66,095 of ₹1.25 lakh projected loss</span></div>
+        <div class="card"><span>Stock-outs averted</span><div class="big ok">44</div><span>68 transfer orders, 66 km average haul</span></div>
+        <div class="card"><span>Expiring stock rescued</span><div class="big ok">50%</div><span>₹62,784 of ₹1.26 lakh projected loss</span></div>
       </div>
       <ul style="font-size:17px">
         <li>Vital medicines first; donors keep their own safety stock</li>
         <li>Cold-chain items only between working fridges, within 150 km</li>
-        <li>21 warehouse indents (14 vital, ₹39,445), flagged when a fridge must be repaired first</li>
+        <li>20 warehouse indents (12 vital, ₹46,349), flagged when a fridge must be repaired first</li>
       </ul>
     </div>
   </div>
   <div class="foot"><span>Aushadh Grid · dengue scenario, synthetic pilot data</span><span>06</span></div>
+</section>
+
+<section class="s">
+  <span class="eyebrow">4 · Deliver: from plan to vehicle and phone</span>
+  <h2>Proof the plan works, and the run sheets and SMS to carry it out.</h2>
+  <div class="cols">
+    <img class="shot" src="img/dispatch.jpg" alt="Dispatch: vehicle runs and SMS work orders">
+    <div class="stack">
+      <div class="kpis">
+        <div class="card"><span>Vital-medicine stock-out days</span><div class="big ok">179 → 16</div><span>before routine resupply, no action vs the plan</span></div>
+        <div class="card"><span>Road km</span><div class="big ok">−47%</div><span>45 vehicle runs, 10,457 km vs 19,904 km as separate trips</span></div>
+      </div>
+      <ul style="font-size:17px">
+        <li>Day-by-day simulation of all 528 lines; unmet demand counted as lost, not delayed</li>
+        <li>Runs collect then deliver, fit an 8-hour day, and flag a cold box</li>
+        <li>One SMS per PHC in the codes pharmacists already use; 6 with stale reports count stock first</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>Aushadh Grid · normal operations, synthetic pilot data</span><span>07</span></div>
 </section>
 
 <section class="s">
@@ -134,14 +155,14 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
   <div class="flow">
     <div class="card"><span class="n">Detect</span><b>Surveillance</b><span>EARS C2 on syndromic OPD counts sets outbreak multipliers per district and medicine.</span></div>
     <div class="card"><span class="n">Clean</span><b>Data repair</b><span>Censored demand, typo capping, stale-report estimation, SMS plausibility checks.</span></div>
-    <div class="card"><span class="n">Predict</span><b>Forecast &amp; risk</b><span>Holt smoothing, stock-out probability, FEFO expiry simulation per lot.</span></div>
-    <div class="card"><span class="n">Act</span><b>Optimise</b><span>Cold-chain-aware transfers, expiry rescue, VEN-ranked indents, referrals.</span></div>
+    <div class="card"><span class="n">Predict</span><b>Forecast &amp; risk</b><span>Backtested exponential smoothing, stock-out probability, FEFO expiry simulation per lot.</span></div>
+    <div class="card"><span class="n">Act</span><b>Optimise</b><span>Cold-chain-aware transfers, expiry rescue, VEN-ranked indents, vehicle runs, SMS work orders.</span></div>
   </div>
   <div class="cols eq" style="flex:0 0 auto;align-items:start">
     <div class="card"><b>Learn together</b><span>A federated demand model is shared across BRICS health systems. Only weights cross borders.</span></div>
     <div class="card"><b>Explain</b><span>Gemini writes a situation brief from the exact dashboard state, in Hindi, Telugu, Portuguese, Russian or Chinese. The input JSON is shown on screen.</span></div>
   </div>
-  <div class="foot"><span>Aushadh Grid</span><span>07</span></div>
+  <div class="foot"><span>Aushadh Grid</span><span>08</span></div>
 </section>
 
 <section class="s">
@@ -160,7 +181,7 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
       <p class="muted" style="font-size:17px">Small systems that have rarely seen an outbreak learn outbreak demand from their partners. 14 KB of weights are shared and 0 raw records move.</p>
     </div>
   </div>
-  <div class="foot"><span>Aushadh Grid</span><span>08</span></div>
+  <div class="foot"><span>Aushadh Grid</span><span>09</span></div>
 </section>
 
 <section class="s">
@@ -170,7 +191,7 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
     <img class="shot" src="img/capacity.jpg" alt="Referral finder">
     <img class="shot" src="img/brief.jpg" alt="AI brief">
   </div>
-  <div class="foot"><span>Aushadh Grid</span><span>09</span></div>
+  <div class="foot"><span>Aushadh Grid</span><span>10</span></div>
 </section>
 
 <section class="s">
@@ -181,7 +202,7 @@ th { font-family: var(--m); font-size: 12px; text-transform: uppercase; letter-s
     <div class="card"><b>Production path</b><span>• Cloud Run API, AlloyDB / Firestore lot ledger, BigQuery history<br>• Vertex AI forecasting and Gemini<br>• Pub/Sub webhooks for SMS, WhatsApp and IVR<br>• Flower or TensorFlow Federated for cross-border training<br>• Integrations: state drug systems (DVDMS / eAushadhi), IDSP/IHIP surveillance, ABDM facility registry</span></div>
   </div>
   <p><b>Impact:</b> fewer patients turned away, less medicine thrown away, outbreak stock in place days earlier, and a shared model that makes every partner's forecasts better.</p>
-  <div class="foot"><span>Aushadh Grid</span><span>10</span></div>
+  <div class="foot"><span>Aushadh Grid</span><span>11</span></div>
 </section>
 
 </body></html>

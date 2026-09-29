@@ -45,5 +45,5 @@ consume the new forecast.
 ## Status
 - [x] Drafted
 - [x] Reviewed by a human (approach approved 2026-09-29: tune on an earlier window, update the frozen engine baseline)
-- [ ] Implementation matches this contract
-- [ ] Golden tests exist for every behavior case above
+- [x] Implementation matches this contract (chosen: alpha 0.05, beta 0)
+- [x] Golden tests exist for every behavior case above (`tests/golden/forecast_cases.js`, mutation-checked)

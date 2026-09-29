@@ -45,5 +45,6 @@ resolved — it's just hidden until the next rewrite.
 - **Symptom:** 14-day holdout backtest: model WAPE 22.0% vs 21.3% for a plain 28-day mean; on lines with recent stock-outs 25.1% vs 24.3%.
 - **Root cause:** The Holt trend term (beta 0.08, damped after 21 days) extrapolates noise. Scratch experiment with no trend: 19.9% (alpha 0.3) to 19.0% (alpha 0.1), and 20.0% vs 24.3% on stock-out lines.
 - **Stage/module:** Forecast engine, `baseForecast` (`src/app.html`)
-- **Regression case added:** pending. The fix changes `tests/golden/engine_baseline.json`, which needs explicit human approval; parameters should be chosen on an earlier validation window, not the reported holdout.
-- **Status:** open
+- **Regression case added:** `tests/golden/forecast_cases.js` — cases `F1-chosen-on-selection-window`, `F2-holdout-honest`, `F3-constant-no-drift`, `edge-beta0-flat`; `tests/golden/engine_baseline.json` regenerated with human approval (previous values kept in the file)
+- **Fix:** alpha 0.05, beta 0, chosen by `tools/tune_forecast.py` on days 92-105. Untouched holdout: 18.86% vs 21.31% for the 28-day average; lines with recent stock-outs 19.7% vs 24.3%.
+- **Status:** fixed
