@@ -15,7 +15,7 @@ consume the new forecast.
 ## Outputs
 - `ALPHA`, `BETA`: the pair used by the engine, with a comment recording how it was chosen
 - `tools/tune_forecast.py`: reproduces the selection and prints the grid
-- A regenerated `tests/golden/engine_baseline.json` (approved by the human on 2026-09-29, since the numbers are forecast-driven)
+- A regenerated `tests/golden/engine_baseline.json` (approved on 2026-09-29 after review, since the numbers are forecast-driven)
 
 ## Selection protocol (no peeking)
 - Selection window: fit on days 0-91, forecast days 92-105, score WAPE against the actual values. Stock-out days and entry errors are excluded, as in the backtest.
